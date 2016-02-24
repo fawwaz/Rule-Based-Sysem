@@ -1,0 +1,4 @@
+(counter value:1;)
+(brick name:A; size:10; position:heap;)
+(brick name:B; size:30; position:heap;)
+(brick name:C; size:20; position:heap;)

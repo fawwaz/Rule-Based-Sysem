@@ -1,0 +1,2 @@
+IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)
+IF (brick position:hand;) (counter value:i;) THEN MODIFY 1 (position i) MODIFY 2 (value [i+1])

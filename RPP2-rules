@@ -1,0 +1,5 @@
+IF (wantDays year:n;) THEN REMOVE 1 ADD (year mod4:[n%4]; mod100:[n%100]; mod400:[n%400];)
+IF (year mod400:0;) THEN REMOVE 1 ADD (hasDays days:366;)
+IF (year mod100:0; MOD400:{NOT 0};) THEN REMOVE 1 ADD (hasDays days:365;)
+IF (year mod4:0; MOD100:{NOT 0};) THEN REMOVE 1 ADD (hasDays days:366;)
+IF (year mod4:{NOT 0};) THEN REMOVE 1 ADD (hasDays days:365;)
