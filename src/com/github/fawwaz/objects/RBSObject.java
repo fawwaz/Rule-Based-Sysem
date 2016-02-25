@@ -13,6 +13,7 @@ import java.util.Iterator;
  * @author Asus
  */
 public class RBSObject {
+    public boolean isPositive=true;
     public String name;
     public HashMap<String,String> attributes;
 
@@ -21,6 +22,7 @@ public class RBSObject {
         StringBuffer sb = new StringBuffer();
         sb.append("Informasi objek \n");
         sb.append("Nama Objek : " +name + "\n");
+        sb.append("Neutralitiy: "+isPositive+"\n");
         for(String attr : attributes.keySet()){
             sb.append(attr + " = " + attributes.get(attr) + "\n");
         }

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
+import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
 
 /**
@@ -322,12 +323,18 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private void swapRules(ArrayList<RBSRules> rules,String[] exploded){
         try{
             for (int i = 0; i < exploded.length; i++) {
-            parser.Parse(exploded[i]);
-            System.out.println("=========-----=======");
-        }
+                //parser.Parse(exploded[i]);
+                RBSRules _rules = new RBSRules();
+                _rules.actions = parser.getActions(exploded[i]);
+                _rules.conditions = parser.getConditions(exploded[i]);
+                the_rules.add(_rules);
+            }
         }catch(Exception e){
             System.out.println("Rule format missmatch or some error happens.");
         }
+        
+        System.out.println("END TRANSFERING NOW PRINTING");
+        printRules();
     }
     
     private void swapFacts(ArrayList<RBSObject> facts,String[] exploded){
@@ -336,6 +343,34 @@ public class RBSEditorUI extends javax.swing.JFrame {
             rbsobject.attributes    = parser.getAttributes(exploded[i]);
             rbsobject.name          = parser.getObjectName(exploded[i]);
             the_facts.add(rbsobject);
+        }
+        System.out.println("END TRANSFERING NOW PRINTING");
+        printFacts();
+    }
+    
+    private void printRules(){
+        for (int i = 0; i < the_rules.size(); i++) {
+            RBSRules curr_rule = the_rules.get(i);
+            System.out.println("Rule Number :"+i);
+            System.out.println("================");
+            System.out.println("Conditions :");
+            
+            for (int j = 0; j < curr_rule.conditions.size(); j++) {
+                System.out.println(curr_rule.conditions.get(j).toString());
+            }
+            System.out.println("Actions:");
+            for (int j = 0; j < curr_rule.actions.size(); j++) {
+                System.out.println(curr_rule.actions.get(j).toString());
+            }
+            System.out.println("~~~~~~~~~~~~~~~");
+        }
+    }
+    
+    private void printFacts(){
+        for (int i = 0; i < the_facts.size(); i++) {
+            RBSObject curr_fact = the_facts.get(i);
+            System.out.println(curr_fact.toString());
+            System.out.println("~~~~~~~~~~~~~~~");
         }
     }
     

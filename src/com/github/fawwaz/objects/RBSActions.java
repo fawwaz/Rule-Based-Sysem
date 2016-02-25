@@ -10,7 +10,35 @@ package com.github.fawwaz.objects;
  * @author Asus
  */
 public class RBSActions {
-    public String type;
+    public String type; // ADD | REMOVE | MODIFY
+    public Integer refer;  // REMOVE | MODIFY
+    public RBSObject added; // ADD
+    public String key_value; // MODIFY
+    
     public String second_param;
     public String third_param;
+
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Informasi Action :\n");
+        sb.append("Tipe Action \t\t: " +type + "\n");
+        sb.append("Refer Rule \t\t: "+refer+"\n");
+        sb.append("\tObject To add: \n");
+        if(added!=null){
+            sb.append(added.toString()+"\n");
+        }else{
+            sb.append("Null \n");
+        }
+        sb.append("\tKey value :\n");
+        if(key_value!=null){
+            sb.append(key_value+"\n");
+        }else{
+            sb.append("Null \n");
+        }
+        sb.append("\n=====\n");
+        return sb.toString();
+    }
+    
+    
 }

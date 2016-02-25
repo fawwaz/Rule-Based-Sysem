@@ -12,7 +12,6 @@ import java.util.ArrayList;
  * @author Asus
  */
 public class RBSRules {
-    public boolean isNegative;
     public ArrayList<RBSObject> conditions;
     public ArrayList<RBSActions> actions;
 }

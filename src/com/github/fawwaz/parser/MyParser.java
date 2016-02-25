@@ -41,11 +41,13 @@ public class MyParser {
     String action_modify = "MODIFY \\d+ " + modified_property;
     String action_remove_key = "REMOVE";
     String action_remove = "REMOVE \\d+";
+    String action_number = "(?: )(\\d+)(?: )";
     String action_command = "("+action_add_key+"|"+action_modify_key+"|"+action_remove_key+")";
     String action = "((" + action_add + ")|(" + action_modify + ")|(" + action_remove + "))+";
     String actions = "( " + action + ")+";
     String conditions = "( " + objek + ")+";
     String valid_sentence = "IF" + conditions + " THEN" + actions;
+    String valid_conditions = "(?:IF)"+conditions+" (?:THEN)";
     
     public void Parse(String input){
         //String test = "Hai saya ganteng loh  9 . 23";
@@ -79,19 +81,19 @@ public class MyParser {
         }
     }
     
-    public ArrayList<RBSObject> getConditions(String rule){
-        ArrayList<RBSObject> _conditions = new ArrayList<>();
-        Pattern pattern = Pattern.compile(conditions);
-        Matcher matcher = pattern.matcher(rule);
-        int i =0;
-        while(matcher.find()){
-            i++;
-//            System.out.print("Start index : "+matcher.start());
-//            System.out.println(" End index : "+matcher.end());
-            System.out.println("["+i+"] >>> "+matcher.group());
-        }
-        return _conditions;
-    }
+//    public ArrayList<RBSObject> getConditions(String rule){
+//        ArrayList<RBSObject> _conditions = new ArrayList<>();
+//        Pattern pattern = Pattern.compile(conditions);
+//        Matcher matcher = pattern.matcher(rule);
+//        int i =0;
+//        while(matcher.find()){
+//            i++;
+////            System.out.print("Start index : "+matcher.start());
+////            System.out.println(" End index : "+matcher.end());
+//            System.out.println("["+i+"] >>> "+matcher.group());
+//        }
+//        return _conditions;
+//    }
     
     public HashMap<String,String> getAttributes(String fact){
         HashMap<String, String> _attributes = new HashMap<>();
@@ -121,24 +123,87 @@ public class MyParser {
         ArrayList<RBSActions> _rbsactions = new ArrayList<>();
         Pattern pattern = Pattern.compile(action);
         Matcher matcher = pattern.matcher(actions);
-        int i = 0;
         while(matcher.find()){
-            
+            RBSActions _rbsaction = getAction(matcher.group());
+            _rbsactions.add(_rbsaction);
         }
         return _rbsactions;
     }
     
     public RBSActions getAction(String action){
         RBSActions rbsactions = new RBSActions();
+        
+        
+        // Get action type : 
         Pattern pattern_command = Pattern.compile(action_command);
+        Matcher matcher_command = pattern_command.matcher(action);
+        while(matcher_command.find()){
+            rbsactions.type = matcher_command.group();
+        }
+        
+        // Get Integer
+        if(rbsactions.type.equals("REMOVE") | rbsactions.type.equals("MODIFY")){
+            Pattern pattern_reference = Pattern.compile(action_number);
+            Matcher matcher_reference = pattern_reference.matcher(action);
+            while(matcher_reference.find()){
+                rbsactions.refer = Integer.parseInt(matcher_reference.group().replace(" ", ""));
+            }
+        }
+        
+        // get property to modify
+        if(rbsactions.type.equals("MODIFY")){
+            Pattern pattern_modify = Pattern.compile(modified_property);
+            Matcher matcher_modify = pattern_modify.matcher(action);
+            while(matcher_modify.find()){
+                rbsactions.key_value = matcher_modify.group();
+            }
+                    
+        }
+        
+        // get object to add
+        if(rbsactions.type.equals("ADD")){
+            RBSObject _added = new RBSObject();
+            _added.name = getObjectName(action);
+            _added.attributes = getAttributes(action);
+            rbsactions.added = _added;
+        }
         
         return rbsactions;
     }
+    
+    public ArrayList<RBSObject> getConditions(String rules){
+        ArrayList<RBSObject> _rules = new ArrayList<>();
+        Pattern pattern = Pattern.compile(valid_conditions);
+        Matcher matcher = pattern.matcher(rules);
+        while(matcher.find()){
+            Pattern pattern_object = Pattern.compile(objek);
+            Matcher matcher_object = pattern_object.matcher(matcher.group().replace("IF", "").replace("THEN", ""));
+            while(matcher_object.find()){
+                RBSObject _object = getObject(matcher_object.group());
+                if(matcher_object.group().startsWith("NOT")){
+                    _object.isPositive = false;
+                }else{
+                    _object.isPositive = true;
+                }
+                // Is negative set up here ... 
+                _rules.add(_object);
+            }
+        }
+        return _rules;
+    }
+    
+    public RBSObject getObject(String object){
+        RBSObject _object = new RBSObject();
+        _object.name = getObjectName(object);
+        _object.attributes = getAttributes(object);
+        return _object;
+    }
+    
     
     public static void main(String args[]) {
         MyParser parser = new MyParser();
 //        parser.Parse("");
 //        System.out.println(parser.getObjectName("(brick name:A; size:10; position:heap;)"));
-        parser.getActions("IF (brick position:hand;) (counter value:i;) THEN MODIFY 1 (position i) MODIFY 2 (value [i+1])");
+        parser.getConditions("IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)");
     }
 }
