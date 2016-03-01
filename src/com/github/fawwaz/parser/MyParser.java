@@ -18,36 +18,39 @@ import java.util.regex.Pattern;
  */
 public class MyParser {
     
-    String key_value = "\\w+:\\w+";
-    String ascendent = "\\(\\w+" + "( " + key_value + ")+" + "\\)";
+    public static String key_value = "\\w+:\\w+";
+    public static String ascendent = "\\(\\w+" + "( " + key_value + ")+" + "\\)";
 
-    String specification_test1 = "\\{[><]\\d+ ?(AND|OR)? ?[><]\\d+\\}"; // Handle kasus {>2 AND <9} // (\w+:{[><]\d+ ?(AND|OR)? ?[><]\d+};)|
-    String specification_test2 = "\\{[><](\\w|\\d+)\\}";
-    String specification_test3 = "\\{(NOT )?(\\w|\\d+)\\}";
-    String specification_evaluation = "\\[([\\d+]|\\w)[+-]([\\d+]|\\w)\\]";
-    String specification_variable = "\\w";
-    String specification_atom = "\\w+";
-    String logic_single_operand = "(NOT)? ?\\w+";
-    String logic_double_operand = logic_single_operand + " ?(AND|OR) ?" + logic_single_operand;
-    String specification_logic = "(" + logic_single_operand + ")|(" + logic_double_operand + ")";
-    String attributes = "\\w+:((" + specification_test1 + ")|(" + specification_evaluation + ")|(" + specification_variable + ")|(" + specification_atom + ")|(" + specification_logic + ")|("+specification_test2+")|("+specification_test3+"));";
-    String nama_objek = "\\w+";
-    String nama_objek2 = "(?=\\()\\w+";
-    String objek = "(NOT )?\\(" + nama_objek + "( " + attributes + ")+" + "\\)";
-    String modified_property = "\\(\\w+ ("+specification_atom+"|("+specification_evaluation+"))\\)";
-    String action_add_key = "ADD";
-    String action_add = "ADD " + objek;
-    String action_modify_key = "MODIFY";
-    String action_modify = "MODIFY \\d+ " + modified_property;
-    String action_remove_key = "REMOVE";
-    String action_remove = "REMOVE \\d+";
-    String action_number = "(?: )(\\d+)(?: )";
-    String action_command = "("+action_add_key+"|"+action_modify_key+"|"+action_remove_key+")";
-    String action = "((" + action_add + ")|(" + action_modify + ")|(" + action_remove + "))+";
-    String actions = "( " + action + ")+";
-    String conditions = "( " + objek + ")+";
-    String valid_sentence = "IF" + conditions + " THEN" + actions;
-    String valid_conditions = "(?:IF)"+conditions+" (?:THEN)";
+    public static String specification_test1 = "\\{[><]\\d+ ?(AND|OR)? ?[><]\\d+\\}"; // Handle kasus {>2 AND <9} // (\w+:{[><]\d+ ?(AND|OR)? ?[><]\d+};)|
+    public static String specification_test2 = "\\{[><](\\w|\\d+)\\}";
+    public static String specification_test2_variabel = "\\{[><](\\w)\\}";
+    public static String specification_test2_angka = "\\{[><](\\d+)\\}";
+    public static String specification_test3 = "\\{(NOT )?(\\w|\\d+)\\}";
+    public static String specification_test_overall = "(("+specification_test1+")|("+specification_test2+")|("+specification_test3+"))";
+    public static String specification_evaluation = "\\[([\\d+]|\\w)[+-]([\\d+]|\\w)\\]";
+    public static String specification_variable = "[A-z]";
+    public static String specification_atom = "\\w+";
+    public static String logic_single_operand = "(NOT)? ?\\w+";
+    public static String logic_double_operand = logic_single_operand + " ?(AND|OR) ?" + logic_single_operand;
+    public static String specification_logic = "(" + logic_single_operand + ")|(" + logic_double_operand + ")";
+    public static String attributes = "\\w+:((" + specification_test1 + ")|(" + specification_evaluation + ")|(" + specification_variable + ")|(" + specification_atom + ")|(" + specification_logic + ")|("+specification_test2+")|("+specification_test3+"));";
+    public static String nama_objek = "\\w+";
+    public static String nama_objek2 = "\\(\\w+";
+    public static String objek = "(NOT )?\\(" + nama_objek + "( " + attributes + ")+" + "\\)";
+    public static String modified_property = "\\(\\w+ ("+specification_atom+"|("+specification_evaluation+"))\\)";
+    public static String action_add_key = "ADD";
+    public static String action_add = "ADD " + objek;
+    public static String action_modify_key = "MODIFY";
+    public static String action_modify = "MODIFY \\d+ " + modified_property;
+    public static String action_remove_key = "REMOVE";
+    public static String action_remove = "REMOVE \\d+";
+    public static String action_number = "(?: )(\\d+)(?: )";
+    public static String action_command = "("+action_add_key+"|"+action_modify_key+"|"+action_remove_key+")";
+    public static String action = "((" + action_add + ")|(" + action_modify + ")|(" + action_remove + "))+";
+    public static String actions = "( " + action + ")+";
+    public static String conditions = "( " + objek + ")+";
+    public static String valid_sentence = "IF" + conditions + " THEN" + actions;
+    public static String valid_conditions = "(?:IF)"+conditions+" (?:THEN)";
     
     public void Parse(String input){
         //String test = "Hai saya ganteng loh  9 . 23";
@@ -111,10 +114,10 @@ public class MyParser {
     
     public String getObjectName(String fact){
         String _objectname ="";
-        Pattern pattern = Pattern.compile(nama_objek);
+        Pattern pattern = Pattern.compile(nama_objek2);
         Matcher matcher = pattern.matcher(fact);
         while(matcher.find()){
-            return matcher.group();
+            return matcher.group().replace("(", "");
         }
         return "nofound";
     }
@@ -199,11 +202,24 @@ public class MyParser {
         return _object;
     }
     
+    public Integer doevaluate(String math_expression){
+        // parse first
+        // understand the symbol
+        // execute
+        return 0;
+    }
+    
+    public boolean dotest(String test_expression){
+        return true;
+    }
+    
     
     public static void main(String args[]) {
         MyParser parser = new MyParser();
 //        parser.Parse("");
 //        System.out.println(parser.getObjectName("(brick name:A; size:10; position:heap;)"));
-        parser.getConditions("IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)");
+        parser.isValidObject("IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)");
+        System.out.println(parser.getObjectName("(brick position:heap; name:n; size:s;)"));
+        
     }
 }

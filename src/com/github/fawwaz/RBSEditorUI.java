@@ -32,6 +32,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     
     ArrayList<RBSObject> the_facts;
     ArrayList<RBSRules> the_rules;
+    HashMap<String, Object> temporary_variable;
     /**
      * Creates new form RBSEditorUI
      */
@@ -149,6 +150,11 @@ public class RBSEditorUI extends javax.swing.JFrame {
         jLabel3.setText("Working Conflict Set");
 
         jButton4.setText("Execute");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -175,9 +181,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                     .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(jLabel3)
                             .addGroup(jPanel2Layout.createSequentialGroup()
                                 .addGap(0, 0, Short.MAX_VALUE)
                                 .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 383, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -202,8 +206,6 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 .addComponent(jButton4)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-
-        jLabel4.getAccessibleContext().setAccessibleName("Working Memory");
 
         jMenu1.setText("File");
 
@@ -292,6 +294,12 @@ public class RBSEditorUI extends javax.swing.JFrame {
         String[] explodeds = jTextArea2.getText().split("\n");
         swapFacts(the_facts,explodeds);
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        findConflictSet();
+        copyfacts();
+        System.out.println("Finished finding conflict set");
+    }//GEN-LAST:event_jButton4ActionPerformed
     
     private void readFile(String filename,JTextArea area){
         try{
@@ -374,6 +382,276 @@ public class RBSEditorUI extends javax.swing.JFrame {
         }
     }
     
+    private void findConflictSet(){
+        ArrayList<Integer> conflictfacts = new ArrayList<>();
+        ArrayList<Integer> conflictrules = new ArrayList<>();
+        for (int i = 0; i < the_facts.size(); i++) {
+            RBSObject curr_fact = the_facts.get(i);
+            for (int j = 0; j < the_rules.size(); j++) {
+                System.out.println("Checking rule number : "+j+ " with fact number:"+i);
+                RBSRules curr_rule = the_rules.get(j);
+                // Reset / Clean up the temporary variable
+                temporary_variable = new HashMap<>();
+                if(checkconflict(curr_rule,curr_fact)){
+                    System.out.println("[DEBUG]Adding conflict set");
+                    System.out.println("i >>> "+i+"j >>>"+j);
+                    conflictfacts.add(i);
+                    conflictrules.add(j);
+                }
+            }
+        }
+        printConflicSet(conflictfacts, conflictrules);
+    }
+    
+    public void printConflicSet(ArrayList<Integer> conflictfacts, ArrayList<Integer> Conflictrules){
+        System.out.println("Printing conflict Fact :");
+        for (int i = 0; i < conflictfacts.size(); i++) {
+            System.out.println("["+i+"] Conflict fact number :"+conflictfacts.get(i));
+        }
+        System.out.println("Printing conflict rules :");
+        for (int i = 0; i < Conflictrules.size(); i++) {
+            System.out.println("["+i+"] Conflict rules number :"+Conflictrules.get(i));
+        }
+        System.out.println("======================");
+        
+    }
+    
+    
+    // Return true jika seluruh condition terpenuhi, return false jika ternyata rule tidak cocok dengan fact.
+    private boolean checkconflict(RBSRules rule,RBSObject fact){
+        // By default dianggap selalu memenuhi rule, jika ada satu kondisi saja yang tidak memenuh langsung return false.
+        for (int i = 0; i < rule.conditions.size(); i++) {
+            System.out.println("checking condition number "+i + "of the rule");
+            RBSObject curr_condition = rule.conditions.get(i);
+            if(!checkcondition(curr_condition,fact)){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Return true jika objek memenuhi condition, false sebaliknya
+    private boolean checkcondition(RBSObject condition,RBSObject fact){
+        if(condition.isPositive){
+            System.out.println("Entering positive");
+            System.out.println("Condition name : "+condition.name);
+            System.out.println("Fact name:"+fact.name);
+            if(condition.name.equals(fact.name)){
+                // Harus memenuhi semua condition jadi by default return true kecuali ada yang masalh langsung return false
+                for(String key : condition.attributes.keySet()){
+                    String val = condition.attributes.get(key);
+                    System.out.println("[RULE]Key to bechecked : "+key);
+                    System.out.println("[RULE]Val to bechecked : "+val);
+                    if(val.matches(MyParser.specification_variable)){
+                        System.out.println("MASUK TEST TIPE VARIABEL");
+                        // Kalau atom dianggap match seluruhnya dan bisa karena general.., justru masukin ke temporary variable
+                        // cek dulu ada atau enggak variabel itu, kalau ada replace rule dengan variabel yang udah ada di temporary memory tapi kalau belum justru assign ke temporary memory...
+                        if(!temporary_variable.containsKey(val)){
+                            temporary_variable.put(val, fact.attributes.get(key));
+                        }else{
+                            // Evaluate seperti atom..
+                            if(fact.hasAttributeValue(key, (String) temporary_variable.get(val))){
+//                                return true;
+                            }else{
+                                return false;
+                            }
+                        }
+                        
+                        //return true;
+                    }else if(val.matches(MyParser.specification_test_overall)){
+                        System.out.println("MASUK TEST TIPE ");
+                        // handle gimana coba ...
+                        System.out.println("HARUSNYA KITA BIKIN FUNGSI EVALUASI TEST MATEMATIKA");
+                        if(doBooleanEvaluation(key, val, fact)){
+                            System.out.println("REturn true dan factnya adalha : " + fact.toString());
+//                          return true;
+                        }else{
+                            System.out.println("Return false dan factnya adlaha " + fact.toString());
+                            return false;
+                        }
+                    }else if(val.matches(MyParser.specification_atom)){
+                        System.out.println("MASUK TEST TIPE ATOM");
+                        // return membership benergak 
+                        
+                        if(fact.hasAttribute(key)){
+                            if (fact.hasAttributeValue(key, val)) {
+                                System.out.println("FACT : " + key + " >>> " + fact.attributes.get(key));
+                                //return true;
+                            } else {
+                                return false;
+                            }
+                        }else{
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }else{
+                // Kalau objeknya sudah beda pasti beda..
+                return false;
+            }
+        }else{
+            System.out.println("Entering negative");
+            if(condition.name.equals(fact.name)){
+                for(String key : condition.attributes.keySet()){
+                    String val = condition.attributes.get(key);
+                    System.out.println("[RULE]Key to bechecked : "+key);
+                    System.out.println("[RULE]Val to bechecked : "+val);
+                    if(val.matches(MyParser.specification_variable)){
+                        // Kalau atom dianggap match seluruhnya dan bisa karena general.., justru masukin ke temporary variable
+                        // cek dulu ada atau enggak variabel itu, kalau ada replace rule dengan variabel yang udah ada di temporary memory tapi kalau belum justru assign ke temporary memory...
+                        if(!temporary_variable.containsKey(val)){
+                            temporary_variable.put(val, fact.attributes.get(key));
+                        }else{
+                            // Evaluate seperti atom..
+                            if(fact.hasAttributeValue(key, (String) temporary_variable.get(val))){
+//                                return false;
+                            }else{
+                                return true;
+                            }
+                        }
+                        
+                        //return true;
+                    }else if(val.matches(MyParser.specification_test_overall)){
+                        // handle gimana coba ...
+                        System.out.println("HARUSNYA KITA BIKIN FUNGSI EVALUASI TEST MATEMATIKA");
+                        if(!doBooleanEvaluation(key, val, fact)){ // Penting tanda seru di depan soalnya harus ada .
+                            System.out.println("REturn false dan factnya adalha : " + fact.toString());
+//                            return true;
+                        }else{
+                            return true; // HATI HATI INI KETUKER BENERAN GAK PUSING KEPALA BARBIE INI CUMA BUAT YANG
+                        }
+                    }else if(val.matches(MyParser.specification_atom)){
+                        // return membership benergak 
+                        if(fact.hasAttribute(key)){
+                            if(fact.hasAttributeValue(key, val)){
+                                //return false;
+                            }else{
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }else{
+                System.out.println("YANG NEGATIVE BELUM DIIMPMENET SEMUANYA LOH");
+                return false;
+            }
+        }
+    }
+    
+    // return true if the fact suitable with the rule
+    public boolean doBooleanEvaluation(String attrname,String rule, RBSObject fact){
+        if(rule.matches(MyParser.specification_test_overall)){
+            // Contoh {<s} atau {<2}
+            if(rule.matches(MyParser.specification_test2_variabel)){
+                // Mungkin menimbulkan exception terutama kalau gak ada :
+                String true_rule = rule;
+                String variable_name = rule.replaceAll("[<>\\{\\}]", "");
+                System.out.println("Rule input "+rule);
+                        
+//                if(temporary_variable.containsKey(variable_name)){
+//                    true_rule = rule.replace(variable_name, (String) temporary_variable.get(variable_name));
+//                }else{
+//                    // Throw exception .. 
+//                }
+                if(rule.replace("{", "").startsWith("<")){
+                    System.out.println("Unhandled yet .. so you should handle as the same as below ");
+                    int indexmax  = findTheMostMaximum(attrname,fact);
+                    if(the_facts.get(indexmax).equals(fact)){
+                        return true;
+                    }else{
+                        return false;
+                    }
+//                    System.out.println("Temporary variable var name : "+variable_name+ " value : " +temporary_variable.get(variable_name));
+//                    System.out.println("Attribute name fact :"+fact.attributes.get(attrname));
+//                    if(Integer.valueOf(fact.attributes.get(attrname)) < Integer.valueOf((String) temporary_variable.get(variable_name))){
+//                        return true;
+//                    }else{
+//                        return false;
+//                    }    
+                }else if(rule.replace("{", "").startsWith(">")){
+                    /// PUSINNNGG PUSINNGG PUSINGG
+                    System.out.println("Temporary variable var name : "+variable_name+ " value : " +temporary_variable.get(variable_name));
+                    System.out.println("Attribute name fact :"+fact.attributes.get(attrname));
+                    int indexmin = findTheMostMinimum(attrname);
+                    if(the_facts.get(indexmin).equals(fact)){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            }else if(rule.matches(MyParser.specification_test3)){ // Case : {NOT XYZ}
+                if(rule.replace("{", "").replace("}", "").trim().startsWith("NOT")){
+                    System.out.println("Masuk ke blok not dan attribute name : "+attrname);
+                    if(fact.hasAttribute(attrname)){
+                        System.out.println("The fact has attribute"+attrname);
+                        if (fact.hasAttributeValue(attrname, rule.replace("{", "").replace("}", "").replace("NOT", "").trim())) {
+                            System.out.println("Atau justru malah kesini?");
+                            return false;
+                        } else {
+                            System.out.println("Sherusnya kesini");
+                            return true;
+                        }
+                    }else{
+                        System.out.println("The fact doesn't have attribute"+attrname);
+                        return false;
+                    }
+                }else{
+                    if(fact.hasAttributeValue(attrname, rule.replace("{", "").replace("}", "").trim())){
+                        System.out.println("Masuk ke blok biasa dan attribute name"+attrname);
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+                
+            } // Harusnya ada lebih banyak else if lagi selain 
+        }else{
+            // Harusnya else if ..
+            return false;
+        }
+        // Ini jgua gak bener :
+        return false;
+    }
+    
+    public void copyfacts(){
+        jTextArea3.setText(jTextArea2.getText());
+    }
+    
+    // Return fact id which is the most minimum
+    private int findTheMostMinimum(String attrname) {
+        boolean firsttime = true;
+        int mostminimum = 0;
+        for (int i = 0; i < the_facts.size(); i++) {
+            RBSObject curr_fact = the_facts.get(i);
+            if(curr_fact.hasAttribute(attrname) && firsttime){
+                mostminimum = i;
+                firsttime = false;
+            }else if(curr_fact.hasAttribute(attrname) && the_facts.get(mostminimum).hasAttribute(attrname)){
+                int curr_val = Integer.valueOf((String) curr_fact.attributes.get(attrname));
+                int temp_min_val = Integer.valueOf((String) the_facts.get(mostminimum).attributes.get(attrname));
+                if(temp_min_val >= curr_val){
+                    mostminimum = i;
+                }
+            }
+        }
+        return mostminimum;
+    }
+    
+    private int findTheMostMaximum(String attrname,RBSObject fact){
+        int mostmaximumindex =0;
+        for (int i = 1; i < the_facts.size(); i++) {
+            RBSObject curr_fact = the_facts.get(i);
+            if(curr_fact.hasAttribute(attrname) && (the_facts.get(mostmaximumindex).attributes.get(attrname) != null)){
+                if(Integer.valueOf((String) curr_fact.attributes.get(attrname)) >= Integer.valueOf((String) the_facts.get(mostmaximumindex).attributes.get(attrname))){
+                    mostmaximumindex = i;
+                }
+            }
+        }
+        return mostmaximumindex;
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -434,4 +712,5 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private javax.swing.JTextArea jTextArea2;
     private javax.swing.JTextArea jTextArea3;
     // End of variables declaration//GEN-END:variables
+
 }
