@@ -1,1 +1,2 @@
-(year mod100:0; mod4:9;)
+(wantDays year:2016;)
+(year mod4:0; mod100:16; mod400:16;)

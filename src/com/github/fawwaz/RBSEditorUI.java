@@ -32,6 +32,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
     
     ArrayList<RBSObject> the_facts;
     ArrayList<RBSRules> the_rules;
+    ArrayList<Integer> conflictfacts;
+    ArrayList<Integer> conflictrules;
     HashMap<String, Object> temporary_variable;
     /**
      * Creates new form RBSEditorUI
@@ -296,7 +298,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        findConflictSet();
+        findConflictSet2();
         copyfacts();
         System.out.println("Finished finding conflict set");
     }//GEN-LAST:event_jButton4ActionPerformed
@@ -383,8 +385,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
     }
     
     private void findConflictSet(){
-        ArrayList<Integer> conflictfacts = new ArrayList<>();
-        ArrayList<Integer> conflictrules = new ArrayList<>();
+        conflictfacts = new ArrayList<>();
+        conflictrules = new ArrayList<>();
         for (int i = 0; i < the_facts.size(); i++) {
             RBSObject curr_fact = the_facts.get(i);
             for (int j = 0; j < the_rules.size(); j++) {
@@ -392,7 +394,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 RBSRules curr_rule = the_rules.get(j);
                 // Reset / Clean up the temporary variable
                 temporary_variable = new HashMap<>();
-                if(checkconflict(curr_rule,curr_fact)){
+                if(checkconflict(curr_rule,the_facts.get(j))){
                     System.out.println("[DEBUG]Adding conflict set");
                     System.out.println("i >>> "+i+"j >>>"+j);
                     conflictfacts.add(i);
@@ -402,6 +404,22 @@ public class RBSEditorUI extends javax.swing.JFrame {
         }
         printConflicSet(conflictfacts, conflictrules);
     }
+    
+    private void findConflictSet2(){
+        // Clean up / create ulang agenda saat setiap siklus mencapai conflict set..s
+        conflictfacts = new ArrayList<>();
+        conflictrules = new ArrayList<>();
+        temporary_variable = new HashMap<>();
+        for (int i = 0; i < the_rules.size(); i++) {
+            System.out.println("Checking rule number "+ i);
+            RBSRules curr_rule = the_rules.get(i);
+            if(checkconflict2(curr_rule,i)){
+                System.out.println("[DEBUG2222]Adding conflict set2");
+            }
+        }
+        printConflicSet(conflictfacts, conflictrules);
+    }
+    
     
     public void printConflicSet(ArrayList<Integer> conflictfacts, ArrayList<Integer> Conflictrules){
         System.out.println("Printing conflict Fact :");
@@ -423,12 +441,43 @@ public class RBSEditorUI extends javax.swing.JFrame {
         for (int i = 0; i < rule.conditions.size(); i++) {
             System.out.println("checking condition number "+i + "of the rule");
             RBSObject curr_condition = rule.conditions.get(i);
-            if(!checkcondition(curr_condition,fact)){
+            if(!checkcondition(curr_condition,the_facts.get(i))){
                 return false;
             }
         }
         return true;
     }
+    
+    private boolean checkconflict2(RBSRules rule, int rule_number){
+        ArrayList<Integer> satisfied_facts = new ArrayList<>();
+        for (int i = 0; i < rule.conditions.size(); i++) {
+            boolean exist_fact_that_satisy_condition = false;
+            RBSObject curr_condition = rule.conditions.get(i);
+            for (int j = 0; j < the_facts.size(); j++) {
+                System.out.println("Checking condition number " + i + " of the rule number "+rule_number+". Compared to fact number "+j);
+                if(checkcondition(curr_condition, the_facts.get(j))){
+                    exist_fact_that_satisy_condition = true;
+                    satisfied_facts.add(j);
+                    if (satisfied_facts.size() == rule.conditions.size()) {
+                        // seluruh fact memenuhi disini ...
+                        for (int k = 0; k < satisfied_facts.size(); k++) {
+                            conflictfacts.add(satisfied_facts.get(k));
+                            conflictrules.add(rule_number);
+                        }
+                    }
+                }
+            }
+            
+            if(!exist_fact_that_satisy_condition){
+                return false;
+            }else{
+                System.out.println("HAI");
+            }
+        }
+        
+        return true;        
+    }
+    
     
     // Return true jika objek memenuhi condition, false sebaliknya
     private boolean checkcondition(RBSObject condition,RBSObject fact){
@@ -450,8 +499,12 @@ public class RBSEditorUI extends javax.swing.JFrame {
                             temporary_variable.put(val, fact.attributes.get(key));
                         }else{
                             // Evaluate seperti atom..
-                            if(fact.hasAttributeValue(key, (String) temporary_variable.get(val))){
-//                                return true;
+                            if(fact.hasAttribute(key)){
+                                if(fact.hasAttributeValue(key, (String) temporary_variable.get(val))){
+    //                                return true;
+                                }else{
+                                    return false;
+                                }
                             }else{
                                 return false;
                             }
