@@ -15,6 +15,10 @@ public class RBSActions {
     public RBSObject added; // ADD
     public String key_value; // MODIFY
     
+    public static final String TYPE_ADD = "ADD";
+    public static final String TYPE_REMOVE = "REMOVE";
+    public static final String TYPE_MODIFY = "MODIFY";
+    
     public String second_param;
     public String third_param;
 

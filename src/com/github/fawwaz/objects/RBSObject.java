@@ -17,6 +17,10 @@ public class RBSObject {
     public String name;
     public HashMap<String,String> attributes;
 
+    public RBSObject() {
+        attributes = new HashMap<>();
+    }    
+    
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();

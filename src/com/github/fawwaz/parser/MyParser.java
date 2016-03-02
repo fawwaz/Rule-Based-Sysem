@@ -27,13 +27,15 @@ public class MyParser {
     public static String specification_test2_angka = "\\{[><](\\d+)\\}";
     public static String specification_test3 = "\\{(NOT )?(\\w|\\d+)\\}";
     public static String specification_test_overall = "(("+specification_test1+")|("+specification_test2+")|("+specification_test3+"))";
-    public static String specification_evaluation = "\\[([\\d+]|\\w)[+-]([\\d+]|\\w)\\]";
-    public static String specification_variable = "[A-z]";
+    public static String specificaton_variabel2 = "(\\w+)";
+    public static String specification_variable = "([abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ])";
+    public static String specification_number = "(\\d+)";
+    public static String specification_evaluation = "\\[(\\w+)[+*/%-](\\w+)\\]";
     public static String specification_atom = "\\w+";
     public static String logic_single_operand = "(NOT)? ?\\w+";
     public static String logic_double_operand = logic_single_operand + " ?(AND|OR) ?" + logic_single_operand;
     public static String specification_logic = "(" + logic_single_operand + ")|(" + logic_double_operand + ")";
-    public static String attributes = "\\w+:((" + specification_test1 + ")|(" + specification_evaluation + ")|(" + specification_variable + ")|(" + specification_atom + ")|(" + specification_logic + ")|("+specification_test2+")|("+specification_test3+"));";
+    public static String attributes = "\\w+:((" + specification_test1 + ")|(" + specification_evaluation + ")|(" + specificaton_variabel2 + ")|(" + specification_atom + ")|(" + specification_logic + ")|("+specification_test2+")|("+specification_test3+"));";
     public static String nama_objek = "\\w+";
     public static String nama_objek2 = "\\(\\w+";
     public static String objek = "(NOT )?\\(" + nama_objek + "( " + attributes + ")+" + "\\)";
@@ -44,7 +46,7 @@ public class MyParser {
     public static String action_modify = "MODIFY \\d+ " + modified_property;
     public static String action_remove_key = "REMOVE";
     public static String action_remove = "REMOVE \\d+";
-    public static String action_number = "(?: )(\\d+)(?: )";
+    public static String action_number = "( \\d+ )";
     public static String action_command = "("+action_add_key+"|"+action_modify_key+"|"+action_remove_key+")";
     public static String action = "((" + action_add + ")|(" + action_modify + ")|(" + action_remove + "))+";
     public static String actions = "( " + action + ")+";
@@ -146,10 +148,10 @@ public class MyParser {
         
         // Get Integer
         if(rbsactions.type.equals("REMOVE") | rbsactions.type.equals("MODIFY")){
-            Pattern pattern_reference = Pattern.compile(action_number);
-            Matcher matcher_reference = pattern_reference.matcher(action);
-            while(matcher_reference.find()){
-                rbsactions.refer = Integer.parseInt(matcher_reference.group().replace(" ", ""));
+            if(rbsactions.type.equals("REMOVE")){
+                rbsactions.refer = Integer.valueOf(action.replace("REMOVE ", ""));
+            }else if(rbsactions.type.equals("MODIFY")){
+                rbsactions.refer = Integer.valueOf(action.replace("MODIFY ", "").substring(0, 1));
             }
         }
         
@@ -167,7 +169,7 @@ public class MyParser {
         if(rbsactions.type.equals("ADD")){
             RBSObject _added = new RBSObject();
             _added.name = getObjectName(action);
-            _added.attributes = getAttributes(action);
+            _added.attributes = getAttributes(action.replace("ADD ", ""));
             rbsactions.added = _added;
         }
         
@@ -202,6 +204,38 @@ public class MyParser {
         return _object;
     }
     
+    public ArrayList<String> getVariableInEvaluation(String evaluation_expression){
+        // Make sure this function called in valid input..
+        ArrayList<String> retval = new ArrayList<>();
+//        if(evaluation_expression.matches(specification_evaluation)){
+            Pattern pattern = Pattern.compile(specification_variable);
+            Matcher matcher = pattern.matcher(evaluation_expression);
+            while(matcher.find()){
+                retval.add(matcher.group());
+            }
+//        }else{
+//            System.out.println("Invalid method call..");
+//        }
+        return retval;
+    }
+    
+    public ArrayList<Integer> getNumberInEvaluation(String evaluation_expression){
+//        System.out.println(specification_evaluation);
+        ArrayList<Integer> retval = new ArrayList<>();
+//        if(evaluation_expression.matches(specification_evaluation)){
+            Pattern pattern = Pattern.compile(specification_number);
+            Matcher matcher = pattern.matcher(evaluation_expression);
+            while(matcher.find()){
+                System.out.println("matched " + matcher.group());
+                retval.add(Integer.valueOf(matcher.group()));
+            }
+//        }else{
+//            System.out.println("Invalid method call..");
+//        }
+        return retval;
+    }
+    
+    
     public Integer doevaluate(String math_expression){
         // parse first
         // understand the symbol
@@ -214,12 +248,26 @@ public class MyParser {
     }
     
     
+    
     public static void main(String args[]) {
         MyParser parser = new MyParser();
 //        parser.Parse("");
 //        System.out.println(parser.getObjectName("(brick name:A; size:10; position:heap;)"));
-        parser.isValidObject("IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)");
-        System.out.println(parser.getObjectName("(brick position:heap; name:n; size:s;)"));
+//        parser.isValidObject("IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)");
+        
+//          System.out.println(parser.getActions("THEN REMOVE 1 ADD (year mod4:[n%4]; mod100:[n%100]; mod400:[n%400];) MODIFY 2 (tai toi)"));
+//        ArrayList<String> variables = parser.getVariableInEvaluation("[n+1]");
+//        for (String variable : variables) {
+//            System.out.println("I got variable : "+ variable);
+//        }
+//        String a = "[n+1]";
+//        String z = a.replaceAll("\\[","").replaceAll("\\]","").replaceAll("\\d+","").replaceAll(parser.specification_variable, "");
+//        System.out.println("Startsw ith "+z);
+//        ArrayList<Integer> variables2 = parser.getNumberInEvaluation("[n+1]");
+//        for(Integer variable : variables2){
+//            System.out.println("I got number : "+ variable);
+//        }
+        //System.out.println(parser.getObjectName("(brick position:heap; name:n; size:s;)"));
         
     }
 }

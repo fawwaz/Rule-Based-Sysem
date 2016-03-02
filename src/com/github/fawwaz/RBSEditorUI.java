@@ -5,6 +5,7 @@
  */
 package com.github.fawwaz;
 
+import com.github.fawwaz.objects.RBSActions;
 import com.github.fawwaz.objects.RBSObject;
 import com.github.fawwaz.objects.RBSRules;
 import com.github.fawwaz.parser.MyParser;
@@ -15,6 +16,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
@@ -34,6 +38,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     ArrayList<RBSRules> the_rules;
     ArrayList<Integer> conflictfacts;
     ArrayList<Integer> conflictrules;
+    ArrayList<Integer> conflictconditions;
     HashMap<String, Object> temporary_variable;
     /**
      * Creates new form RBSEditorUI
@@ -299,7 +304,11 @@ public class RBSEditorUI extends javax.swing.JFrame {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         findConflictSet2();
-        copyfacts();
+        doResolution(decideResolveMethod());
+        
+        
+        //copyfacts();
+        PrintWME();
         System.out.println("Finished finding conflict set");
     }//GEN-LAST:event_jButton4ActionPerformed
     
@@ -387,6 +396,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private void findConflictSet(){
         conflictfacts = new ArrayList<>();
         conflictrules = new ArrayList<>();
+        conflictconditions = new ArrayList<>();
         for (int i = 0; i < the_facts.size(); i++) {
             RBSObject curr_fact = the_facts.get(i);
             for (int j = 0; j < the_rules.size(); j++) {
@@ -409,6 +419,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         // Clean up / create ulang agenda saat setiap siklus mencapai conflict set..s
         conflictfacts = new ArrayList<>();
         conflictrules = new ArrayList<>();
+        conflictconditions = new ArrayList<>();
         temporary_variable = new HashMap<>();
         for (int i = 0; i < the_rules.size(); i++) {
             System.out.println("Checking rule number "+ i);
@@ -458,6 +469,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 if(checkcondition(curr_condition, the_facts.get(j))){
                     exist_fact_that_satisy_condition = true;
                     satisfied_facts.add(j);
+                    conflictconditions.add(j); // Record which fact satisfy conditons used for reference in actions
                     if (satisfied_facts.size() == rule.conditions.size()) {
                         // seluruh fact memenuhi disini ...
                         for (int k = 0; k < satisfied_facts.size(); k++) {
@@ -705,6 +717,146 @@ public class RBSEditorUI extends javax.swing.JFrame {
         return mostmaximumindex;
     }
     
+    
+    /*
+    * Conflict Resolution functions :
+    * Every conflict resolution function returns -1 if it can't resolve which rules should be applied otherwise, it returns the index of rule 
+    */
+    private void doResolution(int rule_num){
+        System.out.println("Selected rule number : "+rule_num);
+        ArrayList<RBSActions> actions = the_rules.get(rule_num).actions;
+        for (int i = 0; i < actions.size(); i++) {
+            RBSActions action = actions.get(i);
+            if(action.type.equals(RBSActions.TYPE_ADD)){
+                
+                RBSObject to_be_added = new RBSObject();
+                to_be_added.name = action.added.name;
+                to_be_added.isPositive = action.added.isPositive;
+                for(Map.Entry<String,String> entry : action.added.attributes.entrySet()){
+                    String key = entry.getKey();
+                    String val = entry.getValue();
+                    if(val.startsWith("[")){
+                        ArrayList<String> operands_string = parser.getVariableInEvaluation(val);
+                        ArrayList<Integer> operands_number = parser.getNumberInEvaluation(val);
+                        String symbol = val.replaceAll("\\[","").replaceAll("\\]","").replaceAll("\\d+","").replaceAll(parser.specification_variable, "");
+                        Integer operation_result = doevaluation(operands_string,operands_number,symbol);
+                        to_be_added.attributes.put(key, String.valueOf(operation_result));
+                        // find the operator first..
+                    }else if(val.matches(MyParser.specification_atom)){
+                        to_be_added.attributes.put(key,val);
+                    }
+                }
+                the_facts.add(to_be_added); 
+                
+                
+            }else if(action.type.equals(RBSActions.TYPE_MODIFY)){
+                // check firtst whether the the fact has an attribute or not
+                if(the_facts.get(conflictfacts.get(rule_num)).hasAttribute(cwd)){
+                }
+            }else if(action.type.equals(RBSActions.TYPE_REMOVE)){
+                int removeidx = conflictconditions.get(action.refer-1);
+                the_facts.remove(removeidx); // -1 karena seluruh index dimulai dari 0
+                System.out.println("Ukuran the_facts sekarang : "+the_facts.size());
+                // Clean up biar ordernya sesuai yang baru
+//                ArrayList<RBSObject> newfacts = new ArrayList<>();
+//                for (int j = 0; j < the_facts.size(); j++) {
+//                    newfacts.add(the_facts.get(j)); 
+//                }
+//                the_facts = newfacts;
+            }
+        }
+    }
+    
+    public void PrintWME(){
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < the_facts.size(); i++) {
+            RBSObject curr_fact = the_facts.get(i);
+            
+            if(!curr_fact.isPositive){
+                sb.append("NOT ");
+            }
+            sb.append("(");
+            sb.append(curr_fact.name);
+            for(Map.Entry<String,String> entry: curr_fact.attributes.entrySet()){
+                String key = entry.getKey();
+                String val = entry.getValue();
+                sb.append(" "+key+":"+val+";");
+            }
+            sb.append(")\n");
+        }
+        jTextArea3.setText(sb.toString());
+    }
+    
+    
+    private int decideResolveMethod() {
+        int selected_index = -1;
+        if(resolveByRefactoriness() != -1){
+            selected_index = resolveByRefactoriness();
+        }else if(resolveByRecency()!=-1){
+            selected_index = resolveByRecency();
+        }else if(resolveBySpecificity() != -1){
+            selected_index = resolveBySpecificity();
+        }else{
+            // Resolve by order // must be true
+           selected_index = resolveByOrder();
+        }
+        return selected_index;
+    }
+    
+    private int resolveByRefactoriness(){
+        // Convert to unique value first 
+        HashSet<Integer> rules = new HashSet<>(conflictrules);
+        
+        System.out.println("Resolve by Refactoriness NOT IMPLEMENTED yet");
+        return -1;
+    }
+    
+    private int resolveByRecency(){
+        System.out.println("Resolve by Recency NOT IMPLEMENTED yet");
+        return -1;
+    }
+    
+    private int resolveByOrder(){
+        return conflictrules.get(0);
+    }
+    
+    private int resolveBySpecificity(){
+        System.out.println("Resolve by Specificity NOT IMPLEMENTED yet");
+        return -1;
+    }
+    
+    private Integer doevaluation(ArrayList<String> operands_string, ArrayList<Integer> operands_number, String symbol) {
+        ArrayList<Integer> operand_integer = new ArrayList<Integer>();
+        for (int i = 0; i < operands_string.size(); i++) {
+            // Look up variabel dulu sih..
+            String temp = (String) temporary_variable.get(operands_string.get(i));
+            operand_integer.add(Integer.valueOf(temp));
+        }
+        Integer calculation_result = 0;
+        
+        if (symbol.equals("+")) {
+            for (int i = 0; i < operand_integer.size(); i++) {
+                for (int j = 0; j < operands_number.size(); j++) {
+                    calculation_result = calculation_result + (operand_integer.get(i) + operands_number.get(j));
+                }
+            }
+        } else if (symbol.equals("-")) {
+            System.out.println(" NOT IMPLEMENTED SUBSTRACTION OPERATION");
+        } else if (symbol.equals("%")) {
+            for (int i = 0; i < operand_integer.size(); i++) {
+                for (int j = 0; j < operands_number.size(); j++) {
+                    calculation_result = calculation_result + (operand_integer.get(i) % operands_number.get(j));
+                }
+            }
+        } else if (symbol.equals("/")) {
+            System.out.println(" NOT IMPLEMENTED DIVSION OPERATION");
+        } else if (symbol.equals("*")) {
+            System.out.println(" NOT IMPLEMENTED MULTIPLICATION OPERATION");
+        }
+        
+        return calculation_result;
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -739,6 +891,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
         });
     }
+    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
@@ -765,5 +918,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private javax.swing.JTextArea jTextArea2;
     private javax.swing.JTextArea jTextArea3;
     // End of variables declaration//GEN-END:variables
+
+
 
 }
