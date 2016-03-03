@@ -246,11 +246,34 @@ public class MyParser {
     public boolean dotest(String test_expression){
         return true;
     }
+    /*START NGASAL ...*/
+   
     
+    
+    private int[] getConvertedToBaseN(int num,int max,int length){
+        int[] retval = new int[length];
+        int mod = 0;
+        int div = num;
+        int idx = length-1; // java starts with 0
+        do{
+            mod         = Math.floorMod(div, max);
+            retval[idx] = mod;
+            div         = Math.floorDiv(div, max);
+            if(idx>0){
+                idx--;
+            }
+            if(mod<max){
+                retval[idx] = div;
+                break;
+            }
+        }while(idx>=0);
+        return retval;
+    }
     
     
     public static void main(String args[]) {
         MyParser parser = new MyParser();
+//        parser.teslagi();
 //        parser.Parse("");
 //        System.out.println(parser.getObjectName("(brick name:A; size:10; position:heap;)"));
 //        parser.isValidObject("IF (brick position:heap; name:n; size:s;) NOT (brick position:heap; size:{>s};) NOT (brick position:hand;) THEN MODIFY 1 (position hand)");
