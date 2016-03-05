@@ -16,10 +16,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
@@ -46,8 +50,9 @@ public class RBSEditorUI extends javax.swing.JFrame {
     String[] conflict_method_order = new String[4];
     HashSet<FactRulePair> rule_fact_pairs;
     ArrayList<RFPair> conflicts;
+    HashSet<RFPair> history;
     // for table 
-    String[] header = new String[]{"Conflict Rule","Conflict Conditions","Conflict Fact"};
+    String[] header = new String[]{"Conflict Rule","Conflict Facts"};
     DefaultTableModel dtm;
     
     /**
@@ -59,7 +64,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         parser = new MyParser();
         initComponents();
         jTable1.setModel(dtm);
-        jTextArea1.setText("RF,RC,SP,RO");
+        jTextField1.setText("RF,RC,SP,RO");
     }
 
     /**
@@ -91,6 +96,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
         jTextField1 = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
         jButton3 = new javax.swing.JButton();
+        jLabel6 = new javax.swing.JLabel();
+        jTextField2 = new javax.swing.JTextField();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -202,6 +209,10 @@ public class RBSEditorUI extends javax.swing.JFrame {
         jButton3.setText("Step By Step");
         jButton3.setToolTipText("");
 
+        jLabel6.setText("Selected Rule");
+
+        jTextField2.setText("0");
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -210,15 +221,19 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jLabel3)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 383, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jLabel3)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(jLabel5)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField1)))
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 191, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel4)
@@ -245,7 +260,9 @@ public class RBSEditorUI extends javax.swing.JFrame {
                     .addComponent(jButton4)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel5)
-                    .addComponent(jButton3))
+                    .addComponent(jButton3)
+                    .addComponent(jLabel6)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -326,6 +343,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         rule_fact_pairs = new HashSet<>();
         the_rules = new ArrayList<>();
+        history = new HashSet<>();
         saveFile(rules.toString(),jTextArea1);        
         String[] explodeds = jTextArea1.getText().split("\n");
         swapRules(the_rules, explodeds);
@@ -334,24 +352,25 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         rule_fact_pairs = new HashSet<>();
         the_facts = new ArrayList<>();
+        history = new HashSet<>();
         saveFile(facts.toString(),jTextArea2);
         String[] explodeds = jTextArea2.getText().split("\n");
         swapFacts(the_facts,explodeds);
+        copyfacts();
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         conflicts = new ArrayList<>();
-//        loadOrder();
+        loadOrder();
         findConflictSet3();
         printRFPairs();
-//        doResolution(decideResolveMethod());
+        doResolution2(decideResolveMethod());
         
-//        updateTable();
-        ////////copyfacts();
-//        PrintWME();
+        updateTable();
+        PrintWME();
 //        System.out.println("Finished finding conflict set");
         
-//        printOrder();
+        printOrder();
     }//GEN-LAST:event_jButton4ActionPerformed
     
     private void readFile(String filename,JTextArea area){
@@ -862,7 +881,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         return mostmaximumindex;
     }
     
-    
+     
     /*
     * Conflict Resolution functions :
     * Every conflict resolution function returns -1 if it can't resolve which rules should be applied otherwise, it returns the index of rule 
@@ -871,9 +890,11 @@ public class RBSEditorUI extends javax.swing.JFrame {
         Integer rule_num = conflictrules.get(rule_index);
         System.out.println("Selected rule number : "+rule_num);
         ArrayList<RBSActions> actions = the_rules.get(rule_num).actions;
+        
         for (int i = 0; i < actions.size(); i++) {
             RBSActions action = actions.get(i);
             if(action.type.equals(RBSActions.TYPE_ADD)){
+                
                 
                 RBSObject to_be_added = new RBSObject();
                 to_be_added.name = action.added.name;
@@ -913,6 +934,79 @@ public class RBSEditorUI extends javax.swing.JFrame {
         }
     }
     
+     private void doResolution2(RFPair rfpair){
+        int rule_num = rfpair.rulenumber;
+        System.out.println("Selected rule-pair : "+rfpair.toString());
+        jTextField2.setText(String.valueOf(rfpair.rulenumber));
+        ArrayList<RBSActions> actions = the_rules.get(rule_num).actions;
+        
+        // Just to apply temporary variable...   
+        temporary_variable = new HashMap<>();
+        for (int i = 0; i < rfpair.matchedfact.size(); i++) {
+            int cekrule = rfpair.rulenumber;
+            int cekfact = rfpair.matchedfact.get(i);
+            checkcondition(the_rules.get(cekrule).conditions.get(i), the_facts.get(cekfact));
+        }
+        
+        for (int i = 0; i < actions.size(); i++) {
+            RBSActions action = actions.get(i);
+            if(action.type.equals(RBSActions.TYPE_ADD)){
+                
+                RBSObject to_be_added = new RBSObject();
+                to_be_added.name = action.added.name;
+                to_be_added.isPositive = action.added.isPositive;
+                for(Map.Entry<String,String> entry : action.added.attributes.entrySet()){
+                    String key = entry.getKey();
+                    String val = entry.getValue();
+                    if(val.startsWith("[")){
+                        ArrayList<String> operands_string = parser.getVariableInEvaluation(val);
+                        ArrayList<Integer> operands_number = parser.getNumberInEvaluation(val);
+                        String symbol = val.replaceAll("\\[","").replaceAll("\\]","").replaceAll("\\d+","").replaceAll(parser.specification_variable, "");
+                        Integer operation_result = doevaluation(operands_string,operands_number,symbol);
+                        to_be_added.attributes.put(key, String.valueOf(operation_result));
+                        // find the operator first..
+                    }else if(val.matches(MyParser.specification_atom)){
+                        to_be_added.attributes.put(key,val);
+                    }
+                }
+                the_facts.add(to_be_added); 
+                
+                
+            }else if(action.type.equals(RBSActions.TYPE_MODIFY)){
+                // check firtst whether the the fact has an attribute or not
+                int modidx = rfpair.matchedfact.get((int) action.refer - 1);                
+                String[] key_val = action.key_value.replaceAll("\\(", "").replaceAll("\\)", "").split(" ");
+                String key = key_val[0];
+                String val = key_val[1];
+                the_facts.get(modidx).attributes.put(key, val);
+//                if(the_facts.get(modidx).hasAttribute(key)){
+//                    
+//                }else{
+//                    the_facts.get(modidx).attributes.put(key, val);
+//                }
+//                action
+//                the_facts.get(modidx).hasAttribute(cwd)
+//                if(the_facts.get(conflictfacts.get(rule_num)).hasAttribute(cwd)){
+//                }
+            }else if(action.type.equals(RBSActions.TYPE_REMOVE)){
+                int removeidx = rfpair.matchedfact.get((int)action.refer - 1 ); // refer -1 karena start index definisi manusia berbeda dengan java
+                the_facts.remove(removeidx); // -1 karena seluruh index dimulai dari 0
+                System.out.println("Ukuran the_facts sekarang : "+the_facts.size());
+                // Clean up biar ordernya sesuai yang baru
+//                ArrayList<RBSObject> newfacts = new ArrayList<>();
+//                for (int j = 0; j < the_facts.size(); j++) {
+//                    newfacts.add(the_facts.get(j)); 
+//                }
+//                the_facts = newfacts;
+            }
+        }
+        
+        
+        // Add to history
+        // Add to History first .. 
+         history.add(rfpair);
+    }
+    
     public void PrintWME(){
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < the_facts.size(); i++) {
@@ -934,19 +1028,42 @@ public class RBSEditorUI extends javax.swing.JFrame {
     }
     
     
-    private int decideResolveMethod() {
-        int selected_index = -1;
-        if(RF() != -1){
-            selected_index = RF();
-        }else if(resolveByRecency()!=-1){
-            selected_index = resolveByRecency();
-        }else if(resolveBySpecificity() != -1){
-            selected_index = resolveBySpecificity();
+    private RFPair decideResolveMethod() {
+        
+        Method method;
+        Class noparams[] = {};
+        Class<?> c;
+        try {
+            c = Class.forName("com.github.fawwaz.RBSEditorUI");
+            Object obj = c.newInstance();
+            for (int i = 0; i < conflict_method_order.length; i++) {
+                String name = conflict_method_order[i];
+                try {
+                    method = c.getDeclaredMethod(name, noparams);
+                    RFPair pair = (RFPair) method.invoke(obj, (Object) null);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                } catch (NoSuchMethodException nme) {
+                    nme.printStackTrace();
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(RBSEditorUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        RFPair selected_rfpair;
+        
+        if(SP() != null){
+            selected_rfpair = SP();
+        }else if(RF() != null){
+            selected_rfpair = RF();
+        }else if(resolveByRecency()!=null){
+            selected_rfpair = resolveByRecency();
         }else{
             // Resolve by order // must be true
-           selected_index = resolveByOrder();
+           selected_rfpair = RO();
         }
-        return selected_index;
+        return selected_rfpair;
     }
     
     
@@ -954,31 +1071,86 @@ public class RBSEditorUI extends javax.swing.JFrame {
     /*
     Resolve By refactoriness 
     */
-    private int RF(){
+    private RFPair RF(){
+        System.out.println("Resolved by Refactoriness");
         // Convert to unique value first 
         HashSet<Integer> rules = new HashSet<>(conflictrules);
+        HashSet<RFPair> conflicted_rules = new HashSet<>(conflicts);
+        conflicted_rules.removeAll(history);
         
-        System.out.println("Resolve by Refactoriness NOT IMPLEMENTED yet");
-        return -1;
-    }
-    
-    private int resolveByRecency(){
-        System.out.println("Resolve by Recency NOT IMPLEMENTED yet");
-        return -1;
-    }
-    
-    private int resolveByOrder(){
-        if(conflictrules.size()>0){
-            return 0; // 0 yang paling pertama pasti..
+        if(conflicted_rules.size()>1){
+            return null;
         }else{
-            return -1;
+            ArrayList<RFPair> output_candidate = new ArrayList<>();
+            Iterator iterator = conflicted_rules.iterator();
+            while(iterator.hasNext()){
+                output_candidate.add((RFPair) iterator.next());
+            }
+            if(output_candidate.size()!=1){
+                return null;
+            }else{
+                return output_candidate.get(0);
+            }
         }
-
     }
     
-    private int resolveBySpecificity(){
-        System.out.println("Resolve by Specificity NOT IMPLEMENTED yet");
-        return -1;
+    private RFPair resolveByRecency(){
+        System.out.println("Resolve by Recency NOT IMPLEMENTED yet");
+        return null;
+    }
+    
+    private RFPair RO(){
+        System.out.println("Resolved by Rule Order");
+        return conflicts.get(0); // selalu yang pertama..
+    }
+    
+    private RFPair SP(){
+        System.out.println("Resolved by Specificity");
+        HashMap<Integer, Integer> scoring = new HashMap<>(); // save mapping from rule number with specificity score number
+        for (int i = 0; i < conflicts.size(); i++) {
+            int score = the_rules.get(conflicts.get(i).rulenumber).conditions.size();
+            for (int j = 0; j < the_rules.get(conflicts.get(i).rulenumber).conditions.size(); j++) {
+                score = score + the_rules.get(conflicts.get(i).rulenumber).conditions.get(j).attributes.size();
+            }
+            scoring.put(conflicts.get(i).rulenumber, score);
+        }
+        
+        
+        // find the maximum value
+        int maxvalue = Integer.MIN_VALUE;
+        int key = 0;
+        for(Map.Entry<Integer,Integer> entry : scoring.entrySet()){
+            if(entry.getValue()>maxvalue){
+                maxvalue = entry.getValue();
+                key = entry.getKey();
+            }
+        }
+        //count how many maximum value
+        int count = 0;
+        for(Map.Entry<Integer,Integer> entry : scoring.entrySet()){
+            if(entry.getValue()==maxvalue){
+                count++;
+            }
+        }
+        
+        // if it more than 1 return -1 
+        if(count>1){
+            return null;
+        }else{
+            // else return the index of conflicts for suitable rule...
+            ArrayList<Integer> _keys = new ArrayList<>();
+            for (int i = 0; i < conflicts.size(); i++) {
+                if(conflicts.get(i).rulenumber.equals(key)){
+                    _keys.add(i);
+                }
+            }
+            
+            if(_keys.size()!=1){
+                return null;
+            }else{
+                return conflicts.get(_keys.get(0));
+            }
+        }
     }
     
     private Integer doevaluation(ArrayList<String> operands_string, ArrayList<Integer> operands_number, String symbol) {
@@ -997,7 +1169,11 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 }
             }
         } else if (symbol.equals("-")) {
-            System.out.println(" NOT IMPLEMENTED SUBSTRACTION OPERATION");
+            for (int i = 0; i < operand_integer.size(); i++) {
+                for (int j = 0; j < operands_number.size(); j++) {
+                    calculation_result = calculation_result + (operand_integer.get(i) - operands_number.get(j));
+                }
+            }
         } else if (symbol.equals("%")) {
             for (int i = 0; i < operand_integer.size(); i++) {
                 for (int j = 0; j < operands_number.size(); j++) {
@@ -1049,11 +1225,17 @@ public class RBSEditorUI extends javax.swing.JFrame {
     }
     
     private void updateTable(){
-        String[][] _model = new String[conflictfacts.size()][3];
-        for (int i = 0; i < conflictfacts.size(); i++) {
-            _model[i][0] = String.valueOf(conflictrules.get(i));
-            _model[i][1] = String.valueOf(conflictconditions.get(i));
-            _model[i][2] = String.valueOf(conflictfacts.get(i));
+        dtm.setRowCount(0);
+        String[][] _model = new String[conflicts.size()][2];
+        for (int i = 0; i < conflicts.size(); i++) {
+            _model[i][0] = String.valueOf(conflicts.get(i).rulenumber);
+            StringBuffer sb = new StringBuffer();
+            for (int j = 0; j < conflicts.get(i).matchedfact.size(); j++) {
+                sb.append(String.valueOf(conflicts.get(i).matchedfact.get(j)));
+                sb.append(",");
+            }
+            String res = sb.toString();
+            _model[i][1] = res.substring(0,res.length()-1);
         }
         for (int i = 0; i < _model.length; i++) {
             dtm.addRow(_model[i]);
@@ -1085,6 +1267,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
@@ -1102,6 +1285,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
     private javax.swing.JTextArea jTextArea2;
     private javax.swing.JTextArea jTextArea3;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
 
 
