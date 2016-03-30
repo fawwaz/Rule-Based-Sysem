@@ -636,7 +636,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                     curr_node_test.parent_node.add(last_root);
                     rete_network.add(curr_node_test); // harusnya last_root bukan parent_id
                     last_root = rete_network.indexOf(curr_node_test);
-                }
+                } 
             }
         }
         
