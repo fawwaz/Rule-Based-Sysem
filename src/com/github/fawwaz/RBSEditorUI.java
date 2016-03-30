@@ -6,10 +6,13 @@
 package com.github.fawwaz;
 
 import com.github.fawwaz.objects.FactRulePair;
+import com.github.fawwaz.objects.Pair;
 import com.github.fawwaz.objects.RBSActions;
+import com.github.fawwaz.objects.RBSGraphNode;
 import com.github.fawwaz.objects.RBSObject;
 import com.github.fawwaz.objects.RBSRules;
 import com.github.fawwaz.objects.RFPair;
+import com.github.fawwaz.objects.ThreePair;
 import com.github.fawwaz.parser.MyParser;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,6 +54,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
     HashSet<FactRulePair> rule_fact_pairs;
     ArrayList<RFPair> conflicts;
     HashSet<RFPair> history;
+    
+    ArrayList<RBSGraphNode> rete_network;
     // for table 
     String[] header = new String[]{"Conflict Rule","Conflict Facts"};
     DefaultTableModel dtm;
@@ -65,6 +70,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         initComponents();
         jTable1.setModel(dtm);
         jTextField1.setText("RF,RC,SP,RO");
+        rete_network = new ArrayList<>();
     }
 
     /**
@@ -152,7 +158,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                     .addComponent(jLabel2)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 373, Short.MAX_VALUE)
                     .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(18, Short.MAX_VALUE))
+                .addContainerGap(16, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -305,7 +311,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 877, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 877, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -347,6 +353,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         saveFile(rules.toString(),jTextArea1);        
         String[] explodeds = jTextArea1.getText().split("\n");
         swapRules(the_rules, explodeds);
+        generateNetFirst();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -528,6 +535,86 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
         }
     }
+    
+    // RETE Algorithm
+    private void findConflictSet4(){
+        // 1. Untuk setiap rule,  cari alpha network
+        
+        // 2. Cari beta network yang intersect
+        
+        // 3. add to conflict set
+    }
+    
+    private void generateNetFirst(){
+        
+        // dipanggil sekali setiap kali rule berubah jadi bukan di jbutton4
+        HashSet<String> existing_class_types = new HashSet<>();
+        HashSet<Pair<String,String>> existing_test_atom = new HashSet<>();
+        Integer last_root = 0; // untuk nyimpen root paling akhir.. di iterasi objek tsb
+        ArrayList<ThreePair> threepairs = new ArrayList<>();
+        for (int i = 0; i < the_rules.size(); i++) {
+            RBSRules curr_rule = the_rules.get(i);
+            for (int j = 0; j < curr_rule.conditions.size(); j++) {
+                RBSObject curr_obj = curr_rule.conditions.get(j);
+                existing_class_types.add(curr_obj.name);
+                
+                // Langsung Create objek
+                RBSGraphNode node_class = new RBSGraphNode(curr_obj.name, "alpha", curr_obj.name);
+                
+                // kalau belum pernah ada, anggap aja ini yang pertama
+                if(!rete_network.contains(node_class)){
+                    rete_network.add(node_class); // ini kapan di create coba ... harusnya gak dipanggil
+                }
+                // dapetin id dari last root paling akhir..
+                last_root = rete_network.indexOf(node_class);
+                
+                
+                for(Map.Entry<String,String> entry : curr_obj.attributes.entrySet()){
+                    String attribute = entry.getKey();
+                    String value = entry.getValue();
+                    
+                    System.out.println("Rule Num : "+i+" Condition num "+j+"Key : "+attribute+ " Value : "+ value);
+                    if(!value.matches(MyParser.specification_variable)){
+                        Pair<String,String> p = new Pair(attribute,value);
+                        existing_test_atom.add(p);
+                        
+                        // langsung create node
+                        RBSGraphNode node_tes = new RBSGraphNode(p.toString(),"alpha",attribute,value);
+                        node_tes.parent_node.add(last_root);
+                        if(!rete_network.contains(node_tes)){
+                            rete_network.add(node_tes);
+                            last_root = rete_network.indexOf(node_tes);
+                        }
+                    }else{
+                        // kalau variabel handle dulu sementara..  // asumsi bahwa variabel harus paling akhir 
+                        ThreePair tp = new ThreePair(last_root, value, attribute,i);
+                        threepairs.add(tp);
+                    }
+                }
+            }
+        }
+        
+        // Print everything..
+        Iterator it = existing_class_types.iterator();
+        while(it.hasNext()){
+            String type = (String) it.next();
+            System.out.println(type);
+        }
+        
+        Iterator it2 = existing_test_atom.iterator();
+        while(it2.hasNext()){
+            System.out.println(it2.next());
+        }
+        for (int i = 0; i < rete_network.size(); i++) {
+            System.out.println(rete_network.get(i));
+        }
+        for (int i = 0; i < threepairs.size(); i++) {
+            System.out.println(threepairs.get(i));
+        }
+    }
+    
+    
+    
     
     private void printRFPairs(){
         System.out.println("Printing Conflict set found : ");
@@ -1029,27 +1116,6 @@ public class RBSEditorUI extends javax.swing.JFrame {
     
     
     private RFPair decideResolveMethod() {
-        
-        Method method;
-        Class noparams[] = {};
-        Class<?> c;
-        try {
-            c = Class.forName("com.github.fawwaz.RBSEditorUI");
-            Object obj = c.newInstance();
-            for (int i = 0; i < conflict_method_order.length; i++) {
-                String name = conflict_method_order[i];
-                try {
-                    method = c.getDeclaredMethod(name, noparams);
-                    RFPair pair = (RFPair) method.invoke(obj, (Object) null);
-                } catch (SecurityException e) {
-                    e.printStackTrace();
-                } catch (NoSuchMethodException nme) {
-                    nme.printStackTrace();
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(RBSEditorUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
         
         RFPair selected_rfpair;
         

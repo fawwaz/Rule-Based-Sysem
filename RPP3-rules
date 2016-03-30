@@ -1,0 +1,2 @@
+IF (goal type:simplify; object:n;) (expression arg1:0; op:plus; arg2:x; name:n;) THEN ADD (objek test:doang;)
+IF (goal type:simplify; object:n;) (expression arg1:0; op:star; arg2:x; name:n;) THEN ADD (objek test:doang;)
