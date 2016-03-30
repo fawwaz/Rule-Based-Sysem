@@ -604,29 +604,45 @@ public class RBSEditorUI extends javax.swing.JFrame {
         });
         
         
-        // BIKIN DARI AWAL DISINI...
+        // FASE 1 : Alhpa node type BIKIN DARI AWAL DISINI...
         Integer parent_branch;
         for (int i = 0; i < the_rules.size(); i++) {
             RBSRules curr_rule = the_rules.get(i);
             for (int j = 0; j < curr_rule.conditions.size(); j++) {
                 RBSObject curr_condition = curr_rule.conditions.get(j);
                 
-                
                 RBSGraphNode root_node = new RBSGraphNode(curr_condition.name, "alpha", curr_condition.name);
                 if(!rete_network.contains(root_node)){
                     rete_network.add(root_node);
                 }
-                
-                parent_branch = rete_network.indexOf(root_node);
-                
-                for(Map.Entry<String,String> entry : curr_condition.attributes.entrySet()){
-                    
-                }
-                
             }
         }
         
-        /*
+        // FAse 2 alpha node atom...
+        Integer last_root =0;
+        for (int i = 0; i < counter_test_atom.size(); i++) {
+            Pair<String, Integer> curr_node = counter_test_atom.get(i);
+            String curr_node_name = curr_node.fst();
+            String[] splitted = curr_node_name.substring(1, curr_node_name.length() - 1).split(",");
+            String type = getTypeWhereHasAttribute(splitted[0], splitted[1]);
+            
+            // check whether exist or not 
+            RBSGraphNode parent_node = new RBSGraphNode(type,"alpha",type);
+            if(rete_network.contains(parent_node)){
+                last_root  = rete_network.indexOf(parent_node);
+                RBSGraphNode curr_node_test = new RBSGraphNode(curr_node_name, "alpha", splitted[0], splitted[1]);
+                
+                if(!rete_network.contains(curr_node_test)){
+                    curr_node_test.parent_node.add(last_root);
+                    rete_network.add(curr_node_test); // harusnya last_root bukan parent_id
+                    last_root = rete_network.indexOf(curr_node_test);
+                }
+            }
+        }
+        
+        
+        
+        // Print for debugging
         for (int i = 0; i < counter_test_atom.size(); i++) {
             System.out.println(counter_test_atom.get(i));
         }
@@ -650,9 +666,28 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 System.out.println(threepairs.get(i).get(j));
             }
         }
-        */
+        
+        
+        
     }
     
+    
+    private String getTypeWhereHasAttribute(String attribute,String value){
+        String retval = "";
+        for (int i = 0; i < the_rules.size(); i++) {
+            RBSRules curr_rule = the_rules.get(i);
+            for (int j = 0; j < curr_rule.conditions.size(); j++) {
+                RBSObject curr_condition = curr_rule.conditions.get(j);
+                
+                if(curr_condition.attributes.containsKey(attribute)){
+                    if(curr_condition.attributes.get(attribute).equals(value)){
+                        retval = curr_condition.name;
+                    }
+                }
+            }
+        }
+        return retval;
+    }
     
     
     
