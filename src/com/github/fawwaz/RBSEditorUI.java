@@ -21,6 +21,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -550,24 +552,16 @@ public class RBSEditorUI extends javax.swing.JFrame {
         // dipanggil sekali setiap kali rule berubah jadi bukan di jbutton4
         HashSet<String> existing_class_types = new HashSet<>();
         HashSet<Pair<String,String>> existing_test_atom = new HashSet<>();
-        Integer last_root = 0; // untuk nyimpen root paling akhir.. di iterasi objek tsb
-        ArrayList<ThreePair> threepairs = new ArrayList<>();
+        ArrayList<Pair<String,Integer>> counter_test_atom = new ArrayList<>();
+        ArrayList<ArrayList<ThreePair>> threepairs = new ArrayList<>();
+        
         for (int i = 0; i < the_rules.size(); i++) {
             RBSRules curr_rule = the_rules.get(i);
+            
+            ArrayList<ThreePair> temp_three_pair = new ArrayList<>();
             for (int j = 0; j < curr_rule.conditions.size(); j++) {
                 RBSObject curr_obj = curr_rule.conditions.get(j);
                 existing_class_types.add(curr_obj.name);
-                
-                // Langsung Create objek
-                RBSGraphNode node_class = new RBSGraphNode(curr_obj.name, "alpha", curr_obj.name);
-                
-                // kalau belum pernah ada, anggap aja ini yang pertama
-                if(!rete_network.contains(node_class)){
-                    rete_network.add(node_class); // ini kapan di create coba ... harusnya gak dipanggil
-                }
-                // dapetin id dari last root paling akhir..
-                last_root = rete_network.indexOf(node_class);
-                
                 
                 for(Map.Entry<String,String> entry : curr_obj.attributes.entrySet()){
                     String attribute = entry.getKey();
@@ -578,20 +572,63 @@ public class RBSEditorUI extends javax.swing.JFrame {
                         Pair<String,String> p = new Pair(attribute,value);
                         existing_test_atom.add(p);
                         
-                        // langsung create node
-                        RBSGraphNode node_tes = new RBSGraphNode(p.toString(),"alpha",attribute,value);
-                        node_tes.parent_node.add(last_root);
-                        if(!rete_network.contains(node_tes)){
-                            rete_network.add(node_tes);
-                            last_root = rete_network.indexOf(node_tes);
+                        
+                        // Cuma buat tes sorting
+                        Pair<String, Integer> p2 = new Pair(p.toString(), 1);
+                        if(!counter_test_atom.contains(p2)){
+                            counter_test_atom.add(p2);
+                        }else{
+                            int index_cek = counter_test_atom.indexOf(p2);
+                            int incremented = counter_test_atom.get(index_cek).snd()+1;
+                            counter_test_atom.get(index_cek).setComponent2(incremented);
                         }
                     }else{
                         // kalau variabel handle dulu sementara..  // asumsi bahwa variabel harus paling akhir 
-                        ThreePair tp = new ThreePair(last_root, value, attribute,i);
-                        threepairs.add(tp);
+                        ThreePair tp = new ThreePair(value, attribute,i);
+                        temp_three_pair.add(tp);
                     }
                 }
             }
+            threepairs.add(temp_three_pair);
+            
+        }
+        
+        
+        // Sort first
+        Collections.sort(counter_test_atom, new Comparator<Pair<String, Integer>>() {
+
+            @Override
+            public int compare(Pair<String, Integer> o1, Pair<String, Integer> o2) {
+                return o2.snd().compareTo(o1.snd());
+            }
+        });
+        
+        
+        // BIKIN DARI AWAL DISINI...
+        Integer parent_branch;
+        for (int i = 0; i < the_rules.size(); i++) {
+            RBSRules curr_rule = the_rules.get(i);
+            for (int j = 0; j < curr_rule.conditions.size(); j++) {
+                RBSObject curr_condition = curr_rule.conditions.get(j);
+                
+                
+                RBSGraphNode root_node = new RBSGraphNode(curr_condition.name, "alpha", curr_condition.name);
+                if(!rete_network.contains(root_node)){
+                    rete_network.add(root_node);
+                }
+                
+                parent_branch = rete_network.indexOf(root_node);
+                
+                for(Map.Entry<String,String> entry : curr_condition.attributes.entrySet()){
+                    
+                }
+                
+            }
+        }
+        
+        /*
+        for (int i = 0; i < counter_test_atom.size(); i++) {
+            System.out.println(counter_test_atom.get(i));
         }
         
         // Print everything..
@@ -609,8 +646,11 @@ public class RBSEditorUI extends javax.swing.JFrame {
             System.out.println(rete_network.get(i));
         }
         for (int i = 0; i < threepairs.size(); i++) {
-            System.out.println(threepairs.get(i));
+            for (int j = 0; j < threepairs.get(i).size(); j++) {
+                System.out.println(threepairs.get(i).get(j));
+            }
         }
+        */
     }
     
     

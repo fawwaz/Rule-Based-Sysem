@@ -14,7 +14,13 @@ public class ThreePair {
     public String variable; // nyimpan variabelnya.
     public String attribute; // nyimpan atribut yang mengisi variable
     public Integer rule_id; // nyimpan urutan rule
-
+    
+    public ThreePair(String variable, String attribute, Integer rule_id) {
+        this.variable = variable;
+        this.attribute = attribute;
+        this.rule_id = rule_id;
+    }
+    
     public ThreePair(Integer root_id, String variable, String attribute, Integer rule_id) {
         this.root_id = root_id;
         this.variable = variable;
