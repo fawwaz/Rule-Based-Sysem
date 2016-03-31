@@ -564,11 +564,10 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 existing_class_types.add(curr_obj.name);
                 
                 // Plis disable dulu 
-                /*
-                for(Map.Entry<String,String> entry : curr_obj.attributes.entrySet()){
-                    String attribute = entry.getKey();
-                    String value = entry.getValue();
-                    
+                for (int k = 0; k < curr_obj.attributes.size(); k++) {
+                    Pair<String,String> _p = curr_obj.attributes.get(k);
+                    String attribute = _p.fst();
+                    String value = _p.snd();
                     System.out.println("Rule Num : "+i+" Condition num "+j+"Key : "+attribute+ " Value : "+ value);
                     if(!value.matches(MyParser.specification_variable)){
                         Pair<String,String> p = new Pair(attribute,value);
@@ -590,7 +589,6 @@ public class RBSEditorUI extends javax.swing.JFrame {
                         temp_three_pair.add(tp);
                     }
                 }
-                */
             }
             threepairs.add(temp_three_pair);
             
