@@ -699,6 +699,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         for (int i = 0; i < rete_network.size(); i++) {
             System.out.println(rete_network.get(i));
         }
+        
         for (int i = 0; i < threepairs.size(); i++) {
             for (int j = 0; j < threepairs.get(i).size(); j++) {
                 System.out.println(threepairs.get(i).get(j));
