@@ -640,7 +640,15 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
         }
         
-        
+        /*
+        for (int i = 0; i < rete_network.size(); i++) {
+            if(rete_network.get(i).parent_node.size()>1){
+                for (int j = 0; j < rete_network.get(i).parent_node.size(); j++) {
+                    rete_network.get(j).child_node.add(i);
+                }
+            }
+        }
+        */
         
         // Print for debugging
         for (int i = 0; i < counter_test_atom.size(); i++) {
@@ -658,16 +666,72 @@ public class RBSEditorUI extends javax.swing.JFrame {
         while(it2.hasNext()){
             System.out.println(it2.next());
         }
+        
+        
+        
+        
+        // Ini buat bikin beta network.. Temporer dulu
+        /*
+        ArrayList<HashMap<String, Integer>> mapping_node_variable_to_frequency = new ArrayList<>();
+        ArrayList<String> variables = new ArrayList<>();
+        for (int i = 0; i < threepairs.size(); i++) {
+            HashMap<String,Integer> temp_mapping_node_variable_to_frequency = new HashMap<>();
+            for (int j = 0; j < threepairs.get(i).size(); j++) {
+                String variabel = threepairs.get(i).get(j).variable;
+                if(!temp_mapping_node_variable_to_frequency.containsKey(variabel)){
+                    temp_mapping_node_variable_to_frequency.put(variabel, 1);
+                }else{
+                    Integer incremented = temp_mapping_node_variable_to_frequency.get(variabel) + 1;
+                    temp_mapping_node_variable_to_frequency.put(variabel,incremented);
+                }
+                System.out.println(threepairs.get(i).get(j));
+            }
+            
+            
+            
+            // nignep mapping
+            for(Map.Entry<String,Integer> entry : temp_mapping_node_variable_to_frequency.entrySet()){
+                System.out.println("Entry "+entry.getKey()+" Val "+ entry.getValue());
+                if(entry.getValue()>1){
+                    variables.add(entry.getKey());
+                }
+            }
+        }
+        /**/
+        /*
+        HashMap<String,RBSGraphNode> variable_to_node_mapping = new HashMap<>();
+        for (int i = 0; i < variables.size(); i++) {
+            String curr_variables = variables.get(i);
+            for (int j = 0; j < threepairs.size(); j++) {
+                for (int k = 0; k < threepairs.get(i).size(); k++) {
+                    if(threepairs.get(j).get(k).variable.equals(curr_variables)){
+                        
+                        Integer parent_id = getIdReteWhereAttributTest(threepairs.get(j).get(k).attribute);
+                        if(variable_to_node_mapping.get(curr_variables)==null){ // kalau belum pernah sama sekali
+                            RBSGraphNode node_beta = new RBSGraphNode("beta_"+i, "beta");
+                            node_beta.attribute_parent_test.add(threepairs.get(j).get(k).attribute);
+                            node_beta.parent_node.add(parent_id);
+                            variable_to_node_mapping.put(curr_variables, node_beta);
+                        }else{
+                            RBSGraphNode node_beta = variable_to_node_mapping.get(curr_variables);
+                            node_beta.attribute_parent_test.add(threepairs.get(j).get(k).attribute);
+                            node_beta.parent_node.add(parent_id);
+                            variable_to_node_mapping.put(curr_variables, node_beta);
+                        }
+                    }
+                }
+            }
+        }
+        /**/
+        /*
+        for (Map.Entry<String,RBSGraphNode> curr_entry : variable_to_node_mapping.entrySet()) {
+            rete_network.add(curr_entry.getValue());
+        }
+        /**/
+        System.out.println("Printing RETE Network generated");
         for (int i = 0; i < rete_network.size(); i++) {
             System.out.println(rete_network.get(i));
         }
-        for (int i = 0; i < threepairs.size(); i++) {
-            for (int j = 0; j < threepairs.get(i).size(); j++) {
-                System.out.println(threepairs.get(i).get(j));
-            }
-        }
-        
-        
         
     }
     
@@ -687,6 +751,25 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
         }
         return retval;
+    }
+    
+    private Integer getIdReteWhereAttributTest(String attribute){
+        /*
+        HashMap<String,Integer> mapping_type_to_last_id = new HashMap<>();
+        for (int i = 0; i < rete_network.size(); i++) {
+            if(rete_network)
+        }
+        */
+        
+        // Jelas gak ada soalnya attribute dari variable yang dimasukin
+        for (int i = 0; i < rete_network.size(); i++) {
+            if(rete_network.get(i).attribute_test!=null){
+                if(rete_network.get(i).attribute_test.equals(attribute)){
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
     
     

@@ -20,11 +20,13 @@ public class RBSGraphNode {
     public String attribute_test; // only if atom 
     public String value_test; // only if atom
     public Integer associated_rule_number; // it only has value if the graph node type is terminal
+    public ArrayList<String> attribute_parent_test;
     public ArrayList<Integer> child_node; //  save every child node
     public ArrayList<Integer> parent_node; // save every parent node
     public ArrayList<Integer> associated_facts; // save partial matches;
     
     public RBSGraphNode(){
+        attribute_parent_test = new ArrayList<>();
         child_node = new ArrayList<>();
         parent_node = new ArrayList<>();
         associated_facts = new ArrayList<>();
@@ -34,6 +36,7 @@ public class RBSGraphNode {
         child_node = new ArrayList<>();
         parent_node = new ArrayList<>();
         associated_facts = new ArrayList<>();
+        attribute_parent_test = new ArrayList<>();
         this.graphName = graphName;
         this.node_type = node_type;
     }
@@ -42,6 +45,7 @@ public class RBSGraphNode {
         child_node = new ArrayList<>();
         parent_node = new ArrayList<>();
         associated_facts = new ArrayList<>();
+        attribute_parent_test = new ArrayList<>();
         this.graphName = graphName;
         this.node_type = node_type;
         this.class_type_test = class_type_test;
@@ -51,6 +55,7 @@ public class RBSGraphNode {
         child_node = new ArrayList<>();
         parent_node = new ArrayList<>();
         associated_facts = new ArrayList<>();
+        attribute_parent_test = new ArrayList<>();
         this.graphName = graphName;
         this.node_type = node_type;
         this.attribute_test = attribute_test;
@@ -120,7 +125,7 @@ public class RBSGraphNode {
                 //"\nattribute_test=" + attribute_test + 
                 //"\nvalue_test=" + value_test + 
                 //"\nassociated_rule_number=" + associated_rule_number + 
-                //"\nchild_node=" + child_node + 
+                "\nchild_node=" + child_node + 
                 "\nparent_node=" + parent_node + 
                 //"\nassociated_facts=" + associated_facts + 
                 "}";
