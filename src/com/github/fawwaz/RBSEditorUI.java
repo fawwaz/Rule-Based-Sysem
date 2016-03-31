@@ -559,15 +559,30 @@ public class RBSEditorUI extends javax.swing.JFrame {
             RBSRules curr_rule = the_rules.get(i);
             
             ArrayList<ThreePair> temp_three_pair = new ArrayList<>();
+            Integer root_terakhir = 0;
             for (int j = 0; j < curr_rule.conditions.size(); j++) {
                 RBSObject curr_obj = curr_rule.conditions.get(j);
                 existing_class_types.add(curr_obj.name);
+                
+                
+                
+                RBSGraphNode type_node = new RBSGraphNode(curr_obj.name, "alpha", curr_obj.name);
+                
+                if(!rete_network.contains(type_node)){
+                    rete_network.add(type_node);
+                }
+                root_terakhir = rete_network.indexOf(type_node);
+                
+                
+                
                 
                 // Plis disable dulu 
                 for (int k = 0; k < curr_obj.attributes.size(); k++) {
                     Pair<String,String> _p = curr_obj.attributes.get(k);
                     String attribute = _p.fst();
                     String value = _p.snd();
+                    
+                    
                     System.out.println("Rule Num : "+i+" Condition num "+j+"Key : "+attribute+ " Value : "+ value);
                     if(!value.matches(MyParser.specification_variable)){
                         Pair<String,String> p = new Pair(attribute,value);
@@ -583,6 +598,13 @@ public class RBSEditorUI extends javax.swing.JFrame {
                             int incremented = counter_test_atom.get(index_cek).snd()+1;
                             counter_test_atom.get(index_cek).setComponent2(incremented);
                         }
+                        
+                        RBSGraphNode test_node = new RBSGraphNode(p2.toString(), "alpha", attribute, value);
+                        test_node.parent_node.add(root_terakhir);
+                        if(!rete_network.contains(test_node)){
+                            rete_network.add(test_node);
+                        }
+                        root_terakhir = rete_network.indexOf(test_node);
                     }else{
                         // kalau variabel handle dulu sementara..  // asumsi bahwa variabel harus paling akhir 
                         ThreePair tp = new ThreePair(value, attribute,i);
@@ -593,6 +615,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
             threepairs.add(temp_three_pair);
             
         }
+        
+             
         
         
         // Sort first
@@ -619,6 +643,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
         }
         
+        /*
         // FAse 2 alpha node atom...
         Integer last_root =0;
         HashMap<String, Integer> mapping_type_to_last_root = new HashMap<>();
@@ -652,7 +677,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
         }
         
-        
+        */
         
         // Print for debugging
         for (int i = 0; i < counter_test_atom.size(); i++) {
