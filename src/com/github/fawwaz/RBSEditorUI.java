@@ -160,7 +160,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                     .addComponent(jLabel2)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 373, Short.MAX_VALUE)
                     .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(16, Short.MAX_VALUE))
+                .addContainerGap(18, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -313,7 +313,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 877, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 877, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -620,6 +620,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         
         // FAse 2 alpha node atom...
         Integer last_root =0;
+        HashMap<String, Integer> mapping_type_to_last_root = new HashMap<>();
         for (int i = 0; i < counter_test_atom.size(); i++) {
             Pair<String, Integer> curr_node = counter_test_atom.get(i);
             String curr_node_name = curr_node.fst();
@@ -628,15 +629,25 @@ public class RBSEditorUI extends javax.swing.JFrame {
             
             // check whether exist or not 
             RBSGraphNode parent_node = new RBSGraphNode(type,"alpha",type);
-            if(rete_network.contains(parent_node)){
-                last_root  = rete_network.indexOf(parent_node);
-                RBSGraphNode curr_node_test = new RBSGraphNode(curr_node_name, "alpha", splitted[0], splitted[1]);
+            if(!mapping_type_to_last_root.containsKey(type)){
+                Integer parent_root = rete_network.indexOf(parent_node);
+                mapping_type_to_last_root.put(type, parent_root);
                 
-                if(!rete_network.contains(curr_node_test)){
-                    curr_node_test.parent_node.add(last_root);
-                    rete_network.add(curr_node_test); // harusnya last_root bukan parent_id
-                    last_root = rete_network.indexOf(curr_node_test);
-                } 
+                RBSGraphNode curr_node_test = new RBSGraphNode(curr_node_name, "alpha", splitted[0], splitted[1]);
+                curr_node_test.parent_node.add(parent_root);
+                
+                rete_network.add(curr_node_test);
+                last_root = rete_network.indexOf(curr_node_test);
+                mapping_type_to_last_root.put(type,last_root);
+            }else{
+                Integer parent_root = mapping_type_to_last_root.get(type);
+                
+                RBSGraphNode curr_node_test = new RBSGraphNode(curr_node_name, "alpha", splitted[0], splitted[1]);
+                curr_node_test.parent_node.add(parent_root);
+                
+                rete_network.add(curr_node_test);
+                last_root = rete_network.indexOf(curr_node_test);
+                mapping_type_to_last_root.put(type,last_root);
             }
         }
         
@@ -658,6 +669,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
         while(it2.hasNext()){
             System.out.println(it2.next());
         }
+        System.out.println("Rete Network created : ");
         for (int i = 0; i < rete_network.size(); i++) {
             System.out.println(rete_network.get(i));
         }
