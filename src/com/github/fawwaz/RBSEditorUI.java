@@ -563,6 +563,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 RBSObject curr_obj = curr_rule.conditions.get(j);
                 existing_class_types.add(curr_obj.name);
                 
+                // Plis disable dulu 
+                /*
                 for(Map.Entry<String,String> entry : curr_obj.attributes.entrySet()){
                     String attribute = entry.getKey();
                     String value = entry.getValue();
@@ -588,6 +590,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                         temp_three_pair.add(tp);
                     }
                 }
+                */
             }
             threepairs.add(temp_three_pair);
             
@@ -691,10 +694,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
             for (int j = 0; j < curr_rule.conditions.size(); j++) {
                 RBSObject curr_condition = curr_rule.conditions.get(j);
                 
-                if(curr_condition.attributes.containsKey(attribute)){
-                    if(curr_condition.attributes.get(attribute).equals(value)){
-                        retval = curr_condition.name;
-                    }
+                if(curr_condition.hasAttributeValue(attribute, value)){
+                    retval = curr_condition.name;
                 }
             }
         }
@@ -808,8 +809,11 @@ public class RBSEditorUI extends javax.swing.JFrame {
             System.out.println("Fact name:"+fact.name);
             if(condition.name.equals(fact.name)){
                 // Harus memenuhi semua condition jadi by default return true kecuali ada yang masalh langsung return false
-                for(String key : condition.attributes.keySet()){
-                    String val = condition.attributes.get(key);
+                
+                for (int i = 0; i < condition.attributes.size(); i++) {
+                    Pair<String,String> p = condition.attributes.get(i);
+                    String key = p.fst();
+                    String val = p.snd();                    
                     System.out.println("[RULE]Key to bechecked : "+key);
                     System.out.println("[RULE]Val to bechecked : "+val);
                     if(val.matches(MyParser.specification_variable)){
@@ -817,7 +821,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                         // Kalau atom dianggap match seluruhnya dan bisa karena general.., justru masukin ke temporary variable
                         // cek dulu ada atau enggak variabel itu, kalau ada replace rule dengan variabel yang udah ada di temporary memory tapi kalau belum justru assign ke temporary memory...
                         if(!temporary_variable.containsKey(val)){
-                            temporary_variable.put(val, fact.attributes.get(key));
+                            temporary_variable.put(val, fact.getAttributevalue(key));
                         }else{
                             // Evaluate seperti atom..
                             if(fact.hasAttribute(key)){
@@ -849,7 +853,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                         
                         if(fact.hasAttribute(key)){
                             if (fact.hasAttributeValue(key, val)) {
-                                System.out.println("FACT : " + key + " >>> " + fact.attributes.get(key));
+                                System.out.println("FACT : " + key + " >>> " + fact.getAttributevalue(key));
                                 //return true;
                             } else {
                                 return false;
@@ -859,6 +863,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                         }
                     }
                 }
+                /// HAHAHAHHAHAHAHAH
                 return true;
             }else{
                 // Kalau objeknya sudah beda pasti beda..
@@ -867,15 +872,17 @@ public class RBSEditorUI extends javax.swing.JFrame {
         }else{
             System.out.println("Entering negative");
             if(condition.name.equals(fact.name)){
-                for(String key : condition.attributes.keySet()){
-                    String val = condition.attributes.get(key);
+                for (int i = 0; i < condition.attributes.size(); i++) {
+                    Pair<String,String> p = condition.attributes.get(i);
+                    String key = p.fst();
+                    String val = p.snd(); 
                     System.out.println("[RULE]Key to bechecked : "+key);
                     System.out.println("[RULE]Val to bechecked : "+val);
                     if(val.matches(MyParser.specification_variable)){
                         // Kalau atom dianggap match seluruhnya dan bisa karena general.., justru masukin ke temporary variable
                         // cek dulu ada atau enggak variabel itu, kalau ada replace rule dengan variabel yang udah ada di temporary memory tapi kalau belum justru assign ke temporary memory...
                         if(!temporary_variable.containsKey(val)){
-                            temporary_variable.put(val, fact.attributes.get(key));
+                            temporary_variable.put(val, fact.getAttributevalue(key));
                         }else{
                             // Evaluate seperti atom..
                             if(fact.hasAttributeValue(key, (String) temporary_variable.get(val))){
@@ -967,7 +974,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 }else if(rule.replace("{", "").startsWith(">")){
                     /// PUSINNNGG PUSINNGG PUSINGG
                     System.out.println("Temporary variable var name : "+variable_name+ " value : " +temporary_variable.get(variable_name));
-                    System.out.println("Attribute name fact :"+fact.attributes.get(attrname));
+                    System.out.println("Attribute name fact :"+fact.getAttributevalue(attrname));
                     // Cek dulu apakah objek fakta yang sedang dipeirksa merefer ke atribut yang sama dengan variabel yang sudah ada ..
                     if(fact.hasAttribute(attrname)){
                         if(fact.hasAttributeValue(attrname, (String) temporary_variable.get(variable_name))){
@@ -1032,8 +1039,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 mostminimum = i;
                 firsttime = false;
             }else if(curr_fact.hasAttribute(attrname) && the_facts.get(mostminimum).hasAttribute(attrname)){
-                int curr_val = Integer.valueOf((String) curr_fact.attributes.get(attrname));
-                int temp_min_val = Integer.valueOf((String) the_facts.get(mostminimum).attributes.get(attrname));
+                int curr_val = Integer.valueOf((String) curr_fact.getAttributevalue(attrname));
+                int temp_min_val = Integer.valueOf((String) the_facts.get(mostminimum).getAttributevalue(attrname));
                 if(temp_min_val >= curr_val){
                     mostminimum = i;
                 }
@@ -1046,8 +1053,8 @@ public class RBSEditorUI extends javax.swing.JFrame {
         int mostmaximumindex =0;
         for (int i = 1; i < the_facts.size(); i++) {
             RBSObject curr_fact = the_facts.get(i);
-            if(curr_fact.hasAttribute(attrname) && (the_facts.get(mostmaximumindex).attributes.get(attrname) != null)){
-                if(Integer.valueOf((String) curr_fact.attributes.get(attrname)) >= Integer.valueOf((String) the_facts.get(mostmaximumindex).attributes.get(attrname))){
+            if(curr_fact.hasAttribute(attrname) && (the_facts.get(mostmaximumindex).getAttributevalue(attrname) != null)){
+                if(Integer.valueOf((String) curr_fact.getAttributevalue(attrname)) >= Integer.valueOf((String) the_facts.get(mostmaximumindex).getAttributevalue(attrname))){
                     mostmaximumindex = i;
                 }
             }
@@ -1073,18 +1080,19 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 RBSObject to_be_added = new RBSObject();
                 to_be_added.name = action.added.name;
                 to_be_added.isPositive = action.added.isPositive;
-                for(Map.Entry<String,String> entry : action.added.attributes.entrySet()){
-                    String key = entry.getKey();
-                    String val = entry.getValue();
+                for (int j = 0; j < action.added.attributes.size(); j++) {
+                    Pair<String,String> p = action.added.attributes.get(j);
+                    String key = p.fst();
+                    String val = p.snd();
                     if(val.startsWith("[")){
                         ArrayList<String> operands_string = parser.getVariableInEvaluation(val);
                         ArrayList<Integer> operands_number = parser.getNumberInEvaluation(val);
                         String symbol = val.replaceAll("\\[","").replaceAll("\\]","").replaceAll("\\d+","").replaceAll(parser.specification_variable, "");
                         Integer operation_result = doevaluation(operands_string,operands_number,symbol);
-                        to_be_added.attributes.put(key, String.valueOf(operation_result));
+                        to_be_added.attributes.add(new Pair(key, String.valueOf(operation_result)));
                         // find the operator first..
                     }else if(val.matches(MyParser.specification_atom)){
-                        to_be_added.attributes.put(key,val);
+                        to_be_added.attributes.add(new Pair(key,val));
                     }
                 }
                 the_facts.add(to_be_added); 
@@ -1129,18 +1137,20 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 RBSObject to_be_added = new RBSObject();
                 to_be_added.name = action.added.name;
                 to_be_added.isPositive = action.added.isPositive;
-                for(Map.Entry<String,String> entry : action.added.attributes.entrySet()){
-                    String key = entry.getKey();
-                    String val = entry.getValue();
+                
+                for (int j = 0; j < action.added.attributes.size(); j++) {
+                    Pair<String,String> p = action.added.attributes.get(j);
+                    String key = p.fst();
+                    String val = p.snd();                    
                     if(val.startsWith("[")){
                         ArrayList<String> operands_string = parser.getVariableInEvaluation(val);
                         ArrayList<Integer> operands_number = parser.getNumberInEvaluation(val);
                         String symbol = val.replaceAll("\\[","").replaceAll("\\]","").replaceAll("\\d+","").replaceAll(parser.specification_variable, "");
                         Integer operation_result = doevaluation(operands_string,operands_number,symbol);
-                        to_be_added.attributes.put(key, String.valueOf(operation_result));
+                        to_be_added.attributes.add(new Pair(key, String.valueOf(operation_result)));
                         // find the operator first..
                     }else if(val.matches(MyParser.specification_atom)){
-                        to_be_added.attributes.put(key,val);
+                        to_be_added.attributes.add(new Pair(key,val));
                     }
                 }
                 the_facts.add(to_be_added); 
@@ -1152,7 +1162,7 @@ public class RBSEditorUI extends javax.swing.JFrame {
                 String[] key_val = action.key_value.replaceAll("\\(", "").replaceAll("\\)", "").split(" ");
                 String key = key_val[0];
                 String val = key_val[1];
-                the_facts.get(modidx).attributes.put(key, val);
+                the_facts.get(modidx).attributes.add(new Pair(key, val));
 //                if(the_facts.get(modidx).hasAttribute(key)){
 //                    
 //                }else{
@@ -1191,9 +1201,10 @@ public class RBSEditorUI extends javax.swing.JFrame {
             }
             sb.append("(");
             sb.append(curr_fact.name);
-            for(Map.Entry<String,String> entry: curr_fact.attributes.entrySet()){
-                String key = entry.getKey();
-                String val = entry.getValue();
+            for (int j = 0; j < curr_fact.attributes.size(); j++) {
+                Pair<String,String> p = curr_fact.attributes.get(j);
+                String key = p.fst();
+                String val = p.snd();            
                 sb.append(" "+key+":"+val+";");
             }
             sb.append(")\n");

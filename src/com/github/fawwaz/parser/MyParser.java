@@ -5,6 +5,7 @@
  */
 package com.github.fawwaz.parser;
 
+import com.github.fawwaz.objects.Pair;
 import com.github.fawwaz.objects.RBSActions;
 import com.github.fawwaz.objects.RBSObject;
 import java.util.ArrayList;
@@ -100,13 +101,15 @@ public class MyParser {
 //        return _conditions;
 //    }
     
-    public HashMap<String,String> getAttributes(String fact){
-        HashMap<String, String> _attributes = new HashMap<>();
+    public ArrayList<Pair<String, String>> getAttributes(String fact){
+        ArrayList<Pair<String,String>> _attributes = new ArrayList<>();
+        //HashMap<String, String> _attributes = new HashMap<>();
         Pattern pattern = Pattern.compile(attributes);
         Matcher matcher = pattern.matcher(fact);
         while(matcher.find()){
             String[] pairs = matcher.group().replace(";","").split(":");
-            _attributes.put(pairs[0], pairs[1]);
+            Pair<String,String> p = new Pair(pairs[0],pairs[1]);
+            _attributes.add(p);
 //            System.out.print("Start index : "+matcher.start());
 //            System.out.println(" End index : "+matcher.end());
             //System.out.println("["+i+"] >>> "+matcher.group());

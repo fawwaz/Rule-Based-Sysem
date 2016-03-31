@@ -5,6 +5,7 @@
  */
 package com.github.fawwaz.objects;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -15,10 +16,10 @@ import java.util.Iterator;
 public class RBSObject {
     public boolean isPositive=true;
     public String name;
-    public HashMap<String,String> attributes;
+    public ArrayList<Pair<String,String>> attributes;
 
     public RBSObject() {
-        attributes = new HashMap<>();
+        attributes = new ArrayList<>();
     }    
     
     @Override
@@ -27,8 +28,8 @@ public class RBSObject {
         sb.append("Informasi objek \n");
         sb.append("Nama Objek : " +name + "\n");
         sb.append("Neutralitiy: "+isPositive+"\n");
-        for(String attr : attributes.keySet()){
-            sb.append(attr + " = " + attributes.get(attr) + "\n");
+        for (int i = 0; i < attributes.size(); i++) {
+            sb.append(attributes.get(i).fst() + " = " + attributes.get(i).snd() + "\n");
         }
         sb.append("\n=====\n");
         return sb.toString();
@@ -38,21 +39,35 @@ public class RBSObject {
     public boolean hasAttributeValue(String attributename,String _value){
         boolean retval;
         System.out.println("Checking membership of key :"+attributename + " with value : " + _value);
-        String val = attributes.get(attributename);
-        System.out.println("However value of this object is "+ val);
-        if(attributes.containsKey(attributename) && _value.equals(val)){
-            System.out.println("Get the value equal to "+val);
-            retval = true;
-        }else{
-            retval = false;
+        
+        Pair<String,String> p = new Pair(attributename,_value);
+        for (int i = 0; i < attributes.size(); i++) {
+            if(attributes.get(i).equals(p)){
+                return true;
+            }
         }
-        System.out.println("Retval is "+retval);
-        return retval;
+        return false;
     }
     
     // Return true jika memiliki attribute yang dimaksud
     public boolean hasAttribute(String attributename){
-        return attributes.containsKey(attributename);
+        for (int i = 0; i < attributes.size(); i++) {
+            Pair<String,String> p = attributes.get(i);
+            if(p.fst().equals(attributename)){
+                return true;
+            }
+        }
+        return false;        
+    }
+    
+    public String getAttributevalue(String attribute){
+        for (int i = 0; i < attributes.size(); i++) {
+            Pair<String,String> p = attributes.get(i);
+            if (p.fst().equals(attribute)) {
+                return p.snd();
+            }
+        }
+        return null;
     }
     
 }
